@@ -21,7 +21,7 @@ class DrawingAnalyser:
 		self.doc = doc
 		self.msp = doc.modelspace()
 		self.included_entities = []
-		# self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
+		self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
 
 	def	get_holes(self) -> [ezdxf.entities.circle.Circle]:
 		hole_centers = []
@@ -114,7 +114,6 @@ class DrawingAnalyser:
 		all_entities = self.get_entities()
 		ret = []
 		for	entity in all_entities:
-			print(f"Entity: {entity}")
 			if not entity in included:
 				ret.append((entity, False))
 			else:
@@ -127,10 +126,7 @@ class DrawingAnalyser:
 		new_msp = new_doc.modelspace()
 		all_entities = self.__get_analysed_entities()
 		for entity, is_included in all_entities:
-			print(f"Entity: {entity}, {is_included}")
-			# if is_included:
-			# 	entity.dxf.color = 4
-			entity.dxf.color = self.__choose_entity_color(entity)
+			# self.__choose_entity_color(entity)
 			if entity.dxftype() == 'LINE':
 				new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
 			elif entity.dxftype() == 'ARC':
@@ -151,27 +147,22 @@ class DrawingAnalyser:
 
 	def	analyse(self) -> None:
 		self.__visualize_included_entities()
+		print(f"""
+CONNECTED ELEMENTS
+{self.find_connected_elements()}
+		""")
 		print(self)
 
 	def find_connected_elements(self) -> []:
 		entities = self.get_entities()
 		connected_elements = []
-		for i in range(len(entities)):
-			for j in range(i+1, len(entities)):
-				if self.is_connected(entities[i], entities[j]):
-					connected_elements.append((entities[i], entities[j]))
+		
 
-	def __choose_entity_color(self, entity) -> int:
-		if entity.dxftype() == 'LINE':
-			return 1
-		elif entity.dxftype() == 'ARC':
-			return 2
-		elif entity.dxftype() == 'POLYLINE':
-			return 3
-		elif entity.dxftype() == 'CIRCLE':
-			return 4
-		else:
-			return 0
+	def __choose_entity_color(self, connected_entities_groups) -> None:
+		for i in range(len(connected_entities_groups)):
+			if len(connected_entities_groups[i]) > 0:
+				for entity1, entity2 in connected_entities_groups[i]:
+					entity1.dxf.color, entity2.dxf.color = i + 2, i + 1
 		
 	def __str__(self) -> str:
 		return f"""

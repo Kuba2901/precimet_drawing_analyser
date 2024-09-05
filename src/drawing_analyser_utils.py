@@ -5,10 +5,6 @@ class DrawingAnalyserUtils:
 	def __init__(self, msp: ezdxf.layouts.Modelspace):
 		self.msp = msp
 		self.included_entities = []
-	
-	def is_connected(self, entity1: ezdxf.entities.dxfentity.DXFEntity, entity2: ezdxf.entities.dxfentity.DXFEntity) -> bool:
-		if entity1.dxftype() == 'LINE' and entity2.dxftype() == 'LINE':
-			return self.is_connected_lines(entity1, entity2)
 
 	def __is_connected_lines(self, line1: ezdxf.entities.Line, line2: ezdxf.entities.Line) -> bool:
 		return line1.dxf.end == line2.dxf.start or line1.dxf.start == line2.dxf.end
@@ -20,15 +16,22 @@ class DrawingAnalyserUtils:
 		return arc.end_point == line.dxf.start or arc.start_point == line.dxf.end
 
 	def __is_connected_arc_polyline(self, arc: ezdxf.entities.Arc, polyline: ezdxf.entities.Polyline) -> bool:
-		return arc.end_point == polyline.vertices[0].dxf.location or arc.start_point == polyline.vertices[-1].dxf.location
+		return self.__compare_points(arc.end_point, polyline.vertices[0].dxf.location) or self.__compare_points(arc.start_point, polyline.vertices[-1].dxf.location)
 
 	def __is_connected_arc_arc(self, arc1: ezdxf.entities.Arc, arc2: ezdxf.entities.Arc) -> bool:
-		return arc1.end_point == arc2.start_point or arc1.start_point == arc2.end_point
+		return self.__compare_points(arc1.end_point, arc2.start_point) or self.__compare_points(arc1.start_point, arc2.end_point)
+
+	# 2D drawings only
+	def __compare_points(self, point1: ezdxf.math.Vec2, point2: ezdxf.math.Vec2) -> bool:
+		return math.isclose(point1.x, point2.x) and math.isclose(point1.y, point2.y)
 
 	def __is_connected_line_polyline(self, line: ezdxf.entities.Line, polyline: ezdxf.entities.Polyline) -> bool:
 		return line.dxf.end == polyline.vertices[0].dxf.location or line.dxf.start == polyline.vertices[-1].dxf.location
 
-	def is_connected_entities(self, entity1: ezdxf.entities.dxfentity.DXFEntity, entity2: ezdxf.entities.dxfentity.DXFEntity) -> bool:
+	def check_entities_connected(self, entity1: ezdxf.entities.dxfentity.DXFEntity, entity2: ezdxf.entities.dxfentity.DXFEntity) -> bool:
+		if (entity1.dxftype() == "CIRCLE" or entity2.dxftype() == "CIRCLE"):
+			return False
+		print("Entities received: ", entity1, entity2)
 		if entity1.dxftype() == 'LINE' and entity2.dxftype() == 'LINE':
 			if entity2.dxftype() == 'LINE':
 				return self.__is_connected_lines(entity1, entity2)
