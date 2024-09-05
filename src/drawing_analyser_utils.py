@@ -8,33 +8,12 @@ class DrawingAnalyserUtils:
 
 	def __is_connected_lines(self, line1: ezdxf.entities.Line, line2: ezdxf.entities.Line) -> bool:
 		return self.__compare_points(point1=line1.dxf.end, point2=line2.dxf.start) or self.__compare_points(point1=line2.dxf.end, point2=line1.dxf.start)
-
-	def __is_connected_polylines(self, polyline1: ezdxf.entities.Polyline, polyline2: ezdxf.entities.Polyline) -> bool:
-		return self.__compare_points(point1=polyline1.vertices[-1].dxf.location, point2=polyline2.vertices[0].dxf.location) or self.__compare_points(point1=polyline1.vertices[0].dxf.location, point2=polyline2.vertices[-1].dxf.location)
-
-	def __is_connected_lwpolylines(self, lwpolyline1: ezdxf.entities.LWPolyline, lwpolyline2: ezdxf.entities.LWPolyline) -> bool:
-		return self.__compare_points(p1=lwpolyline1[-1], p2=lwpolyline2[0]) or self.__compare_points(p1=lwpolyline1[0], p2=lwpolyline2[-1])
 	
-	def __is_connected_lwpolyline_polyline(self, lwpolyline: ezdxf.entities.LWPolyline, polyline: ezdxf.entities.Polyline) -> bool:	
-		return self.__compare_points(p1=lwpolyline[-1], point2=polyline.vertices[0].dxf.location) or self.__compare_points(p1=lwpolyline[0], point2=polyline.vertices[-1].dxf.location)
-
 	def __is_connected_arc_line(self, arc: ezdxf.entities.Arc, line: ezdxf.entities.Line) -> bool:
 		return self.__compare_points(point1=arc.end_point, point2=line.dxf.start) or self.__compare_points(point1=arc.start_point, point2=line.dxf.end)
 		
-	def __is_connected_arc_polyline(self, arc: ezdxf.entities.Arc, polyline: ezdxf.entities.Polyline) -> bool:
-		return self.__compare_points(point1=arc.end_point, p2=polyline.vertices[0].dxf.location) or self.__compare_points(point1=arc.start_point, p2=polyline.vertices[-1].dxf.location)
-
 	def __is_connected_arc_arc(self, arc1: ezdxf.entities.Arc, arc2: ezdxf.entities.Arc) -> bool:
 		return self.__compare_points(point1=arc1.end_point, point2=arc2.start_point) or self.__compare_points(point1=arc1.start_point, point2=arc2.end_point)
-
-	def __is_connected_arc_lwpolyline(self, arc: ezdxf.entities.Arc, lwpolyline: ezdxf.entities.LWPolyline) -> bool:
-		arc_start_x, arc_start_y = arc.start_point.x, arc.start_point.y
-		arc_end_x, arc_end_y = arc.end_point.x, arc.end_point.y
-		lwpolyline_start_x, lwpolyline_start_y = lwpolyline[0][0], lwpolyline[0][1]
-		lwpolyline_end_x, lwpolyline_end_y = lwpolyline[-1][0], lwpolyline[-1][1]
-		print(f"arc_start: ({arc_start_x}, {arc_start_y}), arc_end: ({arc_end_x}, {arc_end_y})")
-		print(f"lwpolyline_start: ({lwpolyline_start_x}, {lwpolyline_start_y}), lwpolyline_end: ({lwpolyline_end_x}, {lwpolyline_end_y})\n\n")
-		return self.__compare_points(point1=arc.end_point, p2=lwpolyline[0]) or self.__compare_points(point1=arc.start_point, p2=lwpolyline[-1])
 
 	# 2D drawings only
 	def __compare_points(self, point1 = None, point2 = None, p1 = None, p2 = None) -> bool:
@@ -56,44 +35,68 @@ class DrawingAnalyserUtils:
 		if entity1.dxftype() == 'LINE':
 			if entity2.dxftype() == 'LINE':
 				return self.__is_connected_lines(entity1, entity2)
-			elif entity2.dxftype() == 'POLYLINE':
-				return self.__is_connected_line_polyline(entity1, entity2)
+			elif entity2.dxftype() == 'POLYLINE' or entity2.dxftype() == 'LWPOLYLINE':
+				return self.__is_connected_to_polyline(entity1, entity2)
 			elif entity2.dxftype() == 'ARC':
 				return self.__is_connected_arc_line(entity2, entity1)
-			elif entity2.dxftype() == 'LWPOLYLINE':
-				return self.__is_connected_line_lwpolyline(entity1, entity2)
-		elif entity1.dxftype() == 'POLYLINE':
+		elif entity1.dxftype() == 'POLYLINE' or entity1.dxftype() == 'LWPOLYLINE':
 			if entity2.dxftype() == 'LINE':
-				return self.__is_connected_line_polyline(entity2, entity1)
-			elif entity2.dxftype() == 'POLYLINE':
-				return self.__is_connected_polylines(entity1, entity2)
+				return self.__is_connected_to_polyline(entity2, entity1)
+			elif entity2.dxftype() == 'POLYLINE' or entity2.dxftype() == 'LWPOLYLINE':
+				return self.__is_connected_to_polyline(entity2, entity1)
 			elif entity2.dxftype() == 'ARC':
-				return self.__is_connected_arc_polyline(entity2, entity1)
-			elif entity2.dxftype() == 'LWPOLYLINE':
-				return self.__is_connected_lwpolyline_polyline(entity2, entity1)
+				return self.__is_connected_to_polyline(entity2, entity1)
 		elif entity1.dxftype() == 'ARC':
 			if entity2.dxftype() == 'LINE':
 				return self.__is_connected_arc_line(entity1, entity2)
-			elif entity2.dxftype() == 'POLYLINE':
-				return self.__is_connected_arc_polyline(entity1, entity2)
+			elif entity2.dxftype() == 'POLYLINE' or entity2.dxftype() == 'LWPOLYLINE':
+				return self.__is_connected_to_polyline(entity1, entity2)
 			elif entity2.dxftype() == 'ARC':
 				return self.__is_connected_arc_arc(entity1, entity2)
-			elif entity2.dxftype() == 'LWPOLYLINE':
-				return self.__is_connected_arc_lwpolyline(entity1, entity2)
-		elif entity1.dxftype() == 'LWPOLYLINE':
-			if entity2.dxftype() == 'LINE':
-				return self.__is_connected_line_lwpolyline(entity2, entity1)
-			elif entity2.dxftype() == 'POLYLINE':
-				return self.__is_connected_lwpolyline_polyline(entity1, entity2)
-			elif entity2.dxftype() == 'ARC':
-				return self.__is_connected_arc_lwpolyline(entity2, entity1)
-			elif entity2.dxftype() == 'LWPOLYLINE':
-				return self.__is_connected_lwpolylines(entity1, entity2)
 		else:
 			return False
 
-	def __is_connected_line_polyline(self, line: ezdxf.entities.Line, polyline: ezdxf.entities.Polyline) -> bool:
-		return self.__compare_points(point1=line.dxf.end, point2=polyline.vertices[0].dxf.location) or self.__compare_points(point1=line.dxf.start, point2=polyline.vertices[-1].dxf.location)
+	def __is_connected_to_polyline(self, entity: ezdxf.entities.dxfentity.DXFEntity, polyline: ezdxf.entities.Polyline) -> bool:
+		poli = self.__lwpolyline_to_list(polyline)
+		if entity.dxftype() == 'LINE':
+			start = self.__location_to_tuple(entity.dxf.start)
+			end = self.__location_to_tuple(entity.dxf.end)
+			return self.__contains_point(start, poli) or self.__contains_point(end, poli)
+		elif entity.dxftype() == 'ARC':
+			start = self.__location_to_tuple(entity.start_point)
+			end = self.__location_to_tuple(entity.end_point)
+			return self.__contains_point(start, poli) or self.__contains_point(end, poli)
+		elif entity.dxftype() == 'POLYLINE':
+			for vertex in entity.vertices:
+				if self.__contains_point(self.__location_to_tuple(vertex.dxf.location), poli):
+					return True
+			return False
+		elif entity.dxftype() == 'LWPOLYLINE':
+			for vertex in entity:
+				if self.__contains_point(vertex, poli):
+					return True
+			return False
+		else:
+			return False
 
-	def __is_connected_line_lwpolyline(self, line: ezdxf.entities.Line, lwpolyline: ezdxf.entities.LWPolyline) -> bool:
-		return self.__compare_points(point1=line.dxf.end, p2=lwpolyline[0]) or self.__compare_points(point1=line.dxf.start, p2=lwpolyline[-1])
+	def __location_to_tuple(self, location) -> tuple:
+		return (location.x, location.y)
+
+	def __polyline_to_list(self, polyline: ezdxf.entities.Polyline) -> list:
+		ret = []
+		for vertex in polyline.vertices:
+			pt = vertex.dxf.location
+			ret.append((pt.x, pt.y))
+		return ret
+	
+	def __lwpolyline_to_list(self, lwpolyline: ezdxf.entities.LWPolyline) -> list:
+		ret = []
+		for vertex in lwpolyline:
+			ret.append((vertex[0], vertex[1]))
+		return ret
+
+	def __contains_point(self, point: tuple, polyline: list) -> bool:
+		for vertex in polyline:
+			if self.__compare_points(p1=vertex, p2=point):
+				return True
+		return False
