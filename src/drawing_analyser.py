@@ -1,6 +1,7 @@
 import ezdxf
 import math
 from src import drawing_converter
+from src import drawing_analyser_utils
 import ezdxf.addons.odafc
 
 class DrawingAnalyser:
@@ -20,6 +21,7 @@ class DrawingAnalyser:
 		self.doc = doc
 		self.msp = doc.modelspace()
 		self.included_entities = []
+		# self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
 
 	def	get_holes(self) -> [ezdxf.entities.circle.Circle]:
 		hole_centers = []
@@ -126,8 +128,9 @@ class DrawingAnalyser:
 		all_entities = self.__get_analysed_entities()
 		for entity, is_included in all_entities:
 			print(f"Entity: {entity}, {is_included}")
-			if is_included:
-				entity.dxf.color = 4
+			# if is_included:
+			# 	entity.dxf.color = 4
+			entity.dxf.color = self.__choose_entity_color(entity)
 			if entity.dxftype() == 'LINE':
 				new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
 			elif entity.dxftype() == 'ARC':
@@ -152,8 +155,24 @@ class DrawingAnalyser:
 
 	def find_connected_elements(self) -> []:
 		entities = self.get_entities()
-		
+		connected_elements = []
+		for i in range(len(entities)):
+			for j in range(i+1, len(entities)):
+				if self.is_connected(entities[i], entities[j]):
+					connected_elements.append((entities[i], entities[j]))
 
+	def __choose_entity_color(self, entity) -> int:
+		if entity.dxftype() == 'LINE':
+			return 1
+		elif entity.dxftype() == 'ARC':
+			return 2
+		elif entity.dxftype() == 'POLYLINE':
+			return 3
+		elif entity.dxftype() == 'CIRCLE':
+			return 4
+		else:
+			return 0
+		
 	def __str__(self) -> str:
 		return f"""
 DETAILS OF {self.file_name.upper()}
