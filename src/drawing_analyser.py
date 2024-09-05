@@ -147,11 +147,7 @@ class DrawingAnalyser:
 
 	def	analyse(self) -> None:
 		self.__visualize_included_entities()
-		print(f"""
-CONNECTED ELEMENTS
-{self.find_connected_elements()}
-		""")
-		print(self)
+		self.__create_entity_adjacency_matrix()
 
 	def find_connected_elements(self) -> []:
 		entities = self.get_entities()
@@ -163,6 +159,23 @@ CONNECTED ELEMENTS
 			if len(connected_entities_groups[i]) > 0:
 				for entity1, entity2 in connected_entities_groups[i]:
 					entity1.dxf.color, entity2.dxf.color = i + 2, i + 1
+
+	def __create_entity_adjacency_matrix(self) -> []:
+		entities = self.get_entities()
+		matrix = []
+		for entity in entities:
+			matrix.append([])
+		for i in range(len(entities)):
+			for j in range(len(entities)):
+				if i == j:
+					matrix[i].append(True)
+				else:
+					entity1, entity2 = entities[i], entities[j]
+					connected = self.utils.check_entities_connected(entity1, entity2)
+					matrix[i].append(connected)
+		for line in matrix:
+			print(line)
+		return matrix
 		
 	def __str__(self) -> str:
 		return f"""
