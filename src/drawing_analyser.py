@@ -1,5 +1,7 @@
 import ezdxf
 import math
+from src import drawing_converter
+import ezdxf.addons.odafc
 
 class DrawingAnalyser:
 	def __init__(self, name, file_name) -> None:
@@ -7,13 +9,14 @@ class DrawingAnalyser:
 		self.file_name = file_name
 		import sys
 		try:
+			if file_name.endswith('.dwg'):
+				print("Converting DWG to DXF")
+				converter = drawing_converter.DrawingConverter(r"/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileConverter")
+				file_name = converter.convert_dwg_to_dxf(file_name)
 			doc = ezdxf.readfile(file_name)
-		except IOError:
-			print(f"Not a DXF file or a generic I/O error.")
+		except Exception as e:
+			print(f"Error: {e}")
 			sys.exit(1)
-		except ezdxf.DXFStructureError:
-			print(f"Invalid or corrupted DXF file.")
-			sys.exit(2)
 		self.doc = doc
 		self.msp = doc.modelspace()
 		self.included_entities = []
@@ -28,9 +31,15 @@ class DrawingAnalyser:
 	def	get_holes_count(self) -> int:
 		return len(self.get_holes())
 	
-	def get_entities(self) -> [str]:
+	def get_entities_types(self) -> [str]:
 		print(f"Getting entities in {self.name}")
 		return [entity.dxftype() for entity in self.msp]
+
+	def get_entities(self) -> []:
+		entities = []
+		for entity in self.msp:
+			entities.append(entity)
+		return entities
 
 	def	get_total_cut_length(self) -> float:
 		print("Getting the total length of laser cutting")
@@ -96,18 +105,29 @@ class DrawingAnalyser:
 	def	__add_to_included_entities(self, entity) -> None:
 		self.included_entities.append(entity)
 
+	def __get_analysed_entities(self):
+		self.__clear_included_entities()
+		self.get_total_cut_length()
+		included = self.included_entities
+		all_entities = self.get_entities()
+		ret = []
+		for	entity in all_entities:
+			print(f"Entity: {entity}")
+			if not entity in included:
+				ret.append((entity, False))
+			else:
+				ret.append((entity, True))
+		return (ret)
+
 	def __visualize_included_entities(self) -> None:
 		output_file_name = f"indicated_{self.file_name}"
 		new_doc = ezdxf.new(dxfversion=self.doc.dxfversion)
 		new_msp = new_doc.modelspace()
-		
-		# Calculate total cut length and populate included_entities
-		self.get_total_cut_length()
-		print(f"Included entities: {self.included_entities}")
-		
-		for entity in self.included_entities:
-			entity.dxf.color = 1  # Set the entity color to red (AutoCAD color index 1)
-			
+		all_entities = self.__get_analysed_entities()
+		for entity, is_included in all_entities:
+			print(f"Entity: {entity}, {is_included}")
+			if is_included:
+				entity.dxf.color = 4
 			if entity.dxftype() == 'LINE':
 				new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
 			elif entity.dxftype() == 'ARC':
@@ -119,8 +139,9 @@ class DrawingAnalyser:
 					dxfattribs={'color': entity.dxf.color}
 				)
 			elif entity.dxftype() == 'POLYLINE':
-				new_msp.add_polyline2d(entity.points(), dxfattribs={'color': entity.dxf.color})
-		
+				new_msp.add_polyline2d(entity.points(), dxfattribs={'color': entity.dxf.color})		
+			elif entity.dxftype() == 'CIRCLE':
+				new_msp.add_circle(entity.dxf.center, entity.dxf.radius, dxfattribs={'color': entity.dxf.color})
 		new_doc.saveas(output_file_name)
 		self.__clear_included_entities()
 		print(f"Filtered entities saved to {output_file_name}")
@@ -129,9 +150,13 @@ class DrawingAnalyser:
 		self.__visualize_included_entities()
 		print(self)
 
+	def find_connected_elements(self) -> []:
+		entities = self.get_entities()
+		
+
 	def __str__(self) -> str:
 		return f"""
-[*] DETAILS OF {self.file_name.upper()}
+DETAILS OF {self.file_name.upper()}
 Holes count: {self.get_holes_count()}
 Total laser cut length: {self.get_total_cut_length()}
 		"""
