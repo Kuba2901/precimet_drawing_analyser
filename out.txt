@@ -1,0 +1,5 @@
+Getting the total length of laser cutting
+Getting the total length of polylines
+Getting the total length of lines
+Getting the total length of arcs
+Filtered entities saved to indicated_detal1.dxf

@@ -163,16 +163,17 @@ class DrawingAnalyser:
 	def __create_entity_adjacency_matrix(self) -> []:
 		entities = self.get_entities()
 		matrix = []
-		for entity in entities:
-			matrix.append([])
 		for i in range(len(entities)):
+			row = []
 			for j in range(len(entities)):
-				if i == j:
-					matrix[i].append(True)
-				else:
-					entity1, entity2 = entities[i], entities[j]
-					connected = self.utils.check_entities_connected(entity1, entity2)
-					matrix[i].append(connected)
+				row.append(False)
+			matrix.append(row)
+		for i in range(len(entities)):
+			for j in range(i + 1, len(entities)):
+				entity1, entity2 = entities[i], entities[j]
+				connected = self.utils.check_entities_connected(entity1, entity2)
+				matrix[i][j] = connected
+				matrix[j][i] = connected
 		for line in matrix:
 			print(line)
 		return matrix
