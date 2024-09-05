@@ -57,23 +57,23 @@ class DrawingAnalyserUtils:
 			return False
 
 	def __is_connected_to_polyline(self, entity: ezdxf.entities.dxfentity.DXFEntity, polyline: ezdxf.entities.Polyline) -> bool:
-		poli = self.__lwpolyline_to_list(polyline)
+		poly = self.__lwpolyline_to_list(polyline)
 		if entity.dxftype() == 'LINE':
 			start = self.__location_to_tuple(entity.dxf.start)
 			end = self.__location_to_tuple(entity.dxf.end)
-			return self.__contains_point(start, poli) or self.__contains_point(end, poli)
+			return self.__contains_point(start, poly) or self.__contains_point(end, poly)
 		elif entity.dxftype() == 'ARC':
 			start = self.__location_to_tuple(entity.start_point)
 			end = self.__location_to_tuple(entity.end_point)
-			return self.__contains_point(start, poli) or self.__contains_point(end, poli)
+			return self.__contains_point(start, poly) or self.__contains_point(end, poly)
 		elif entity.dxftype() == 'POLYLINE':
 			for vertex in entity.vertices:
-				if self.__contains_point(self.__location_to_tuple(vertex.dxf.location), poli):
+				if self.__contains_point(self.__location_to_tuple(vertex.dxf.location), poly):
 					return True
 			return False
 		elif entity.dxftype() == 'LWPOLYLINE':
 			for vertex in entity:
-				if self.__contains_point(vertex, poli):
+				if self.__contains_point(vertex, poly):
 					return True
 			return False
 		else:

@@ -148,7 +148,7 @@ class DrawingAnalyser:
 	def	analyse(self) -> None:
 		self.__visualize_included_entities()
 		groups_count = self.get_element_groups_count()
-		print(f"Groups count: {groups_count}")
+		print(f"Liczba wpaleń: {groups_count}")
 
 	def get_element_groups_count(self) -> int:
 		"""
@@ -169,17 +169,10 @@ class DrawingAnalyser:
 			for adjacent_entity, is_connected in enumerate(adj_matrix[entity]):
 				if is_connected and not visited[adjacent_entity]:
 					dfs(adjacent_entity)
-
-		# Loop over all entities and perform DFS if the entity is not yet visited
-		entities = self.get_entities()
-		for i in range(num_entities):
-			print(f"Entity: {entities[i].dxftype()}")
-			
 		for entity in range(num_entities):
 			if not visited[entity]:
 				components_count += 1
 				dfs(entity)
-
 		return components_count
 
 	def __choose_entity_color(self, connected_entities_groups) -> None:
