@@ -147,12 +147,40 @@ class DrawingAnalyser:
 
 	def	analyse(self) -> None:
 		self.__visualize_included_entities()
-		self.__create_entity_adjacency_matrix()
+		groups_count = self.get_element_groups_count()
+		print(f"Groups count: {groups_count}")
 
-	def find_connected_elements(self) -> []:
+	def get_element_groups_count(self) -> int:
+		"""
+		Count the number of separate components (connected elements) in the adjacency matrix.
+
+		:param adj_matrix: 2D adjacency matrix (list of lists), where adj_matrix[i][j] == 1
+						indicates a connection between entity i and entity j.
+		:return: Number of separate connected components.
+		"""
+		adj_matrix = self.__create_entity_adjacency_matrix()
+		num_entities = len(adj_matrix)
+		visited = [False] * num_entities
+		components_count = 0
+
+		def dfs(entity):
+			"""Perform DFS to mark all reachable entities from the current entity."""
+			visited[entity] = True
+			for adjacent_entity, is_connected in enumerate(adj_matrix[entity]):
+				if is_connected and not visited[adjacent_entity]:
+					dfs(adjacent_entity)
+
+		# Loop over all entities and perform DFS if the entity is not yet visited
 		entities = self.get_entities()
-		connected_elements = []
-		
+		for i in range(num_entities):
+			print(f"Entity: {entities[i].dxftype()}")
+			
+		for entity in range(num_entities):
+			if not visited[entity]:
+				components_count += 1
+				dfs(entity)
+
+		return components_count
 
 	def __choose_entity_color(self, connected_entities_groups) -> None:
 		for i in range(len(connected_entities_groups)):
@@ -166,12 +194,13 @@ class DrawingAnalyser:
 		for i in range(len(entities)):
 			row = []
 			for j in range(len(entities)):
-				row.append(False)
+				row.append(0) # TODO: Verify if not 1
 			matrix.append(row)
 		for i in range(len(entities)):
+			matrix[i][i] = 1
 			for j in range(i + 1, len(entities)):
 				entity1, entity2 = entities[i], entities[j]
-				connected = self.utils.check_entities_connected(entity1, entity2)
+				connected = 1 if self.utils.check_entities_connected(entity1, entity2) else 0
 				matrix[i][j] = connected
 				matrix[j][i] = connected
 		for line in matrix:

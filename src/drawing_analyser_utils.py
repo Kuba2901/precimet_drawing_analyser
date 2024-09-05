@@ -32,7 +32,7 @@ class DrawingAnalyserUtils:
 	def check_entities_connected(self, entity1: ezdxf.entities.dxfentity.DXFEntity, entity2: ezdxf.entities.dxfentity.DXFEntity) -> bool:
 		if (entity1.dxftype() == "CIRCLE" or entity2.dxftype() == "CIRCLE"):
 			return False
-		if entity1.dxftype() == 'LINE' and entity2.dxftype() == 'LINE':
+		if entity1.dxftype() == 'LINE':
 			if entity2.dxftype() == 'LINE':
 				return self.__is_connected_lines(entity1, entity2)
 			elif entity2.dxftype() == 'POLYLINE':

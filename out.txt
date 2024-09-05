@@ -3,3 +3,32 @@ Getting the total length of polylines
 Getting the total length of lines
 Getting the total length of arcs
 Filtered entities saved to indicated_detal1.dxf
+[1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0]
+[0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0]
+[0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0]
+[0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1]
+[0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+Entity: CIRCLE
+Entity: CIRCLE
+Entity: ARC
+Entity: CIRCLE
+Entity: CIRCLE
+Entity: ARC
+Entity: ARC
+Entity: LWPOLYLINE
+Entity: ARC
+Entity: ARC
+Entity: LINE
+Entity: LINE
+Entity: LINE
+Entity: LINE
+Groups count: 7
