@@ -3,12 +3,14 @@ import math
 from src import drawing_converter
 from src import drawing_analyser_utils
 from src import drawing_tester
+from src import drawing_custom_entity
 import ezdxf.addons.odafc
 
 class DrawingAnalyser:
 	def __init__(self, name, file_name) -> None:
 		self.name = name
 		self.file_name = file_name
+		
 		import sys
 		try:
 			if file_name.endswith('.dwg'):
@@ -21,9 +23,18 @@ class DrawingAnalyser:
 			sys.exit(1)
 		self.doc = doc
 		self.msp = doc.modelspace()
-		self.included_entities = []
-		self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
-		self.tester = drawing_tester.DrawingTester()
+		ent = self.get_entities()
+		for e in ent:
+			print(str(e))
+		# self.included_entities = []
+		# self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
+		# self.tester = drawing_tester.DrawingTester()
+
+	def get_entities(self) -> [drawing_custom_entity.CustomEntity]:
+		entities = []
+		for entity in self.msp:
+			entities.append(drawing_custom_entity.CustomEntity.get_instance(entity))
+		return entities
 
 	def	get_holes(self) -> [ezdxf.entities.circle.Circle]:
 		hole_centers = []
@@ -39,11 +50,11 @@ class DrawingAnalyser:
 		print(f"Getting entities in {self.name}")
 		return [entity.dxftype() for entity in self.msp]
 
-	def get_entities(self) -> []:
-		entities = []
-		for entity in self.msp:
-			entities.append(entity)
-		return entities
+	# def get_entities(self) -> []:
+	# 	entities = []
+	# 	for entity in self.msp:
+	# 		entities.append(entity)
+	# 	return entities
 
 	def	get_total_cut_length(self) -> float:
 		print("Getting the total length of laser cutting")

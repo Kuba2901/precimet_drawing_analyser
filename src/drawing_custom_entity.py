@@ -27,7 +27,7 @@ class CustomEntity(ABC):
 			self.end_point = self.__point_to_tuple(self.entity.dxf.center)
 			self.radius = self.entity.dxf.radius
 		elif self.entity.dxftype() == 'POLYLINE':
-			self.points = [self.__point_to_tuple(point.dxf.location) for point in self.entity.vertices()]
+			self.points = [self.__point_to_tuple(point.dxf.location) for point in self.entity.vertices]
 		elif self.entity.dxftype() == 'LWPOLYLINE':
 			self.points = [(point[0], point[1]) for point in self.entity.vertices()]
 
@@ -39,12 +39,27 @@ class CustomEntity(ABC):
 		end: bool = math.isclose(self.end_point[0], point[0]) and math.isclose(self.end_point[1], point[1])
 		return (start or end)
 
+	@staticmethod
+	def get_instance(entity : ezdxf.entities.DXFEntity):
+		if entity.dxftype() == "CIRCLE":
+			return CustomCircle(entity)
+		elif entity.dxftype() == "ARC":
+			return CustomArc(entity)
+		elif entity.dxftype() == "LINE":
+			return CustomLine(entity)
+		elif entity.dxftype() == "POLYLINE" or entity.dxftype() == "LWPOLYLINE":
+			return CustomPoly(entity)
+
 	@abstractmethod
 	def get_length(self) -> float:
 		pass
 
 	@abstractmethod
-	def is_connected(self, entity: CustomEntity) -> bool:
+	def is_connected(self, entity) -> bool:
+		pass
+
+	@abstractmethod
+	def __str__(self) -> str:
 		pass
 
 class CustomCircle(CustomEntity):
@@ -53,6 +68,9 @@ class CustomCircle(CustomEntity):
 
 	def is_connected(self, entity) -> bool:
 		return (False)
+	
+	def __str__(self) -> str:
+		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self.get_length()}"
 
 class CustomArc(CustomEntity):
 	def get_length(self) -> float:
@@ -70,6 +88,9 @@ class CustomArc(CustomEntity):
 		return (self._is_point_connected(entity.start_point) \
 				or self._is_point_connected(entity.end_point))
 
+	def __str__(self) -> str:
+		return f"Arc with center: {self.center}, radius: {self.radius}, start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+
 class CustomLine(CustomEntity):
 	def	get_length(self) -> float:
 		line: ezdxf.entities.Line = self.entity
@@ -78,16 +99,30 @@ class CustomLine(CustomEntity):
 	def is_connected(self, entity: CustomEntity) -> bool:
 		return self._is_point_connected(entity.start_point) or self._is_point_connected(entity.end_point)
 
+	def __str__(self) -> str:
+		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+
 class CustomPoly(CustomEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.points = self.points
+		self.is_closed = self.entity.is_closed
+
 	def get_length(self) -> float:
 		total = 0.0
-		for i in range(len(self.points)):
-			for j in range(i + 1, len(self.points)):
-				x1, y1 = self.points[i][0], self.points[i][1]
-				x2, y2 = self.points[j][0], self.points[j][1]
-				p = [x1, y1]
-				q = [x2, y2]
-				total += math.dist(p, q)
+		for i in range(len(self.points) - 1):
+			j = i + 1
+			x1, y1 = self.points[i][0], self.points[i][1]
+			x2, y2 = self.points[j][0], self.points[j][1]
+			p = [x1, y1]
+			q = [x2, y2]
+			total += math.dist(p, q)
+		if self.is_closed:
+			x1, y1 = self.points[0][0], self.points[0][1]
+			x2, y2 = self.points[-1][0], self.points[-1][1]
+			p = [x1, y1]
+			q = [x2, y2]
+			total += math.dist(p, q)
 		return (total)
 
 	def is_connected(self, entity: CustomEntity) -> bool:
@@ -99,3 +134,6 @@ class CustomPoly(CustomEntity):
 	def __compare_points(self, p: tuple, q: tuple) -> bool:
 		start: bool = math.isclose(self.p[0], q[0]) and math.isclose(self.p[1], q[1])
 		return (start)
+
+	def __str__(self) -> str:
+		return f"Polyline with points: {self.points} and length: {self.get_length()}"
