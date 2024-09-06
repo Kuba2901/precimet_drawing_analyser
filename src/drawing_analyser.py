@@ -36,13 +36,10 @@ class DrawingAnalyser:
 			ent = CustomEntity.get_instance(entity)
 			if ent is not None:
 				entities.append(ent)
-			# else:
-			# 	print(f"Entity {entity.dxftype()} not supported")
 		return entities
 
-	# TODO: Implement the following method
 	def get_cut_ins_count(self) -> int:
-		pass
+		return self.get_element_groups_count()
 
 	# def __visualize_included_entities(self) -> None:
 	# 	from pathlib import Path
@@ -100,14 +97,8 @@ class DrawingAnalyser:
 				dfs(entity)
 		return components_count
 
-	# def __choose_entity_color(self, connected_entities_groups) -> None:
-	# 	for i in range(len(connected_entities_groups)):
-	# 		if len(connected_entities_groups[i]) > 0:
-	# 			for entity1, entity2 in connected_entities_groups[i]:
-	# 				entity1.dxf.color, entity2.dxf.color = i + 2, i + 1
-
 	def __create_entity_adjacency_matrix(self) -> []:
-		entities = self.__get_entities()
+		entities = self.entities
 		matrix = []
 		for i in range(len(entities)):
 			row = []
@@ -118,15 +109,16 @@ class DrawingAnalyser:
 			matrix[i][i] = 1
 			for j in range(i + 1, len(entities)):
 				entity1, entity2 = entities[i], entities[j]
-				connected = 1 if self.utils.check_entities_connected(entity1, entity2) else 0
+				connected = 1 if entity1.is_connected(entity2) else 0
 				matrix[i][j] = connected
 				matrix[j][i] = connected
-		for line in matrix:
-			print(line)
+		# for line in matrix:
+		# 	print(line)
 		return matrix
 		
 	def __str__(self) -> str:
 		return f"""
 DETAILS OF {self.file_name.upper()}
 Total laser cut length: {self.get_total_length()}
+Number of cut-ins: {self.get_cut_ins_count()}
 		""" 
