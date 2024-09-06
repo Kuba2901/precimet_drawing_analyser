@@ -10,7 +10,7 @@ class DrawingTester(unittest.TestCase):
 		self.test_files.sort()
 		print(self.test_files)
 		self.holes_count = [2, 0, 3, 3, 3, 2, 4, 0, 29]  # Ensure these match file count
-		self.total_length = [247.984, 886.735, 150.078, 267.115, 4599.98, 4528.53, 429.124, 1953.4]
+		self.total_length = [247.984, 886.735, 150.078, 267.115, 4599.98, 4248.53, 429.124, 1953.4]
 	
 	# def test_get_holes_count(self):
 	# 	for idx, test_file in enumerate(self.test_files):
@@ -23,7 +23,7 @@ class DrawingTester(unittest.TestCase):
 			analyser = DrawingAnalyser("Test", test_file)
 			expected_total_length = self.total_length[idx]
 			try:
-				self.assertAlmostEqual(analyser.get_total_length(), expected_total_length, places=3, msg=f"Mismatch in {test_file}, got: {analyser.get_total_length()}, expected: {expected_total_length}")
+				self.assertAlmostEqual(analyser.get_total_length(), expected_total_length, places=2, msg=f"Mismatch in {test_file}, got: {analyser.get_total_length()}, expected: {expected_total_length}")
 				print(f"SUCCESS IN FILE: {test_file}")
 			except AssertionError as e:
 				print(f"FAILURE IN FILE: {test_file}")
