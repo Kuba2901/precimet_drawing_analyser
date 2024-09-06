@@ -27,7 +27,7 @@ class DrawingAnalyserUtils:
 			x2, y2 = p2[0], p2[1]
 		else:
 			x2, y2 = point2.x, point2.y
-		return math.isclose(x1, x2) and math.isclose(y1, y2)
+		return math.isclose(x1, x2, abs_tol=.1) and math.isclose(y1, y2, abs_tol=.1)
 		 
 	def check_entities_connected(self, entity1: ezdxf.entities.dxfentity.DXFEntity, entity2: ezdxf.entities.dxfentity.DXFEntity) -> bool:
 		if (entity1.dxftype() == "CIRCLE" or entity2.dxftype() == "CIRCLE"):

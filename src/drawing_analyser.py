@@ -2,6 +2,7 @@ import ezdxf
 import math
 from src import drawing_converter
 from src import drawing_analyser_utils
+from src import drawing_tester
 import ezdxf.addons.odafc
 
 class DrawingAnalyser:
@@ -22,6 +23,7 @@ class DrawingAnalyser:
 		self.msp = doc.modelspace()
 		self.included_entities = []
 		self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
+		self.tester = drawing_tester.DrawingTester()
 
 	def	get_holes(self) -> [ezdxf.entities.circle.Circle]:
 		hole_centers = []
@@ -84,23 +86,6 @@ class DrawingAnalyser:
 			poly_len += polyline.vertices[i].dxf.location.distance(polyline.vertices[i-1].dxf.location)
 		return poly_len
 
-	def	get_line_length(self, line: ezdxf.entities.Line) -> float:
-		start_point = line.dxf.start
-		end_point = line.dxf.end
-		return start_point.distance(end_point)
-
-	def	get_arc_length(self, arc: ezdxf.entities.Arc) -> float:
-		start_point = arc.start_point
-		end_point = arc.end_point
-		center = arc.dxf.center
-		radius = arc.dxf.radius
-		start_angle = arc.dxf.start_angle
-		end_angle = arc.dxf.end_angle
-		if (end_angle - start_angle) < 0:
-			end_angle += 360
-		arc_length = radius * math.radians(abs(end_angle - start_angle))
-		return arc_length
-
 	def	__clear_included_entities(self) -> None:
 		self.included_entities = []
 
@@ -121,12 +106,13 @@ class DrawingAnalyser:
 		return (ret)
 
 	def __visualize_included_entities(self) -> None:
-		output_file_name = f"indicated_{self.file_name}"
+		from pathlib import Path
+		Path("output").mkdir(parents=True, exist_ok=True)
+		output_file_name = f"output/{Path(self.file_name).name.replace(".dxf", "_filtered.dxf")}"
 		new_doc = ezdxf.new(dxfversion=self.doc.dxfversion)
 		new_msp = new_doc.modelspace()
 		all_entities = self.__get_analysed_entities()
 		for entity, is_included in all_entities:
-			# self.__choose_entity_color(entity)
 			if entity.dxftype() == 'LINE':
 				new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
 			elif entity.dxftype() == 'ARC':
