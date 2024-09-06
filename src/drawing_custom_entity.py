@@ -62,6 +62,9 @@ class CustomEntity(ABC):
 	def __str__(self) -> str:
 		pass
 
+	def _format_number(self, number: float) -> float:
+		return round(number, 3)
+
 class CustomCircle(CustomEntity):
 	def get_length(self) -> float:
 		return (math.pi * 2 * self.radius)
@@ -70,7 +73,7 @@ class CustomCircle(CustomEntity):
 		return (False)
 	
 	def __str__(self) -> str:
-		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self.get_length()}"
+		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self._format_number(self.get_length())}"
 
 class CustomArc(CustomEntity):
 	def get_length(self) -> float:
@@ -89,18 +92,18 @@ class CustomArc(CustomEntity):
 				or self._is_point_connected(entity.end_point))
 
 	def __str__(self) -> str:
-		return f"Arc with center: {self.center}, radius: {self.radius}, start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+		return f"Arc with center: {self.center}, radius: {self._format_number(self.radius)}, start_point: {self.start_point}, end_point: {self.end_point} and length: {self._format_number(self.get_length())}"
 
 class CustomLine(CustomEntity):
 	def	get_length(self) -> float:
 		line: ezdxf.entities.Line = self.entity
-		return line.start_point.distance(self.end_point)
+		return line.dxf.start.distance(line.dxf.end)
 
 	def is_connected(self, entity: CustomEntity) -> bool:
 		return self._is_point_connected(entity.start_point) or self._is_point_connected(entity.end_point)
 
 	def __str__(self) -> str:
-		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self._format_number(self.get_length())}"
 
 class CustomPoly(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
@@ -136,4 +139,4 @@ class CustomPoly(CustomEntity):
 		return (start)
 
 	def __str__(self) -> str:
-		return f"Polyline with points: {self.points} and length: {self.get_length()}"
+		return f"Polyline with points: {self.points} and length: {self._format_number(self.get_length())}"

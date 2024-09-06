@@ -1,151 +1,76 @@
 import ezdxf
 import math
-from src import drawing_converter
-from src import drawing_analyser_utils
-from src import drawing_tester
-from src import drawing_custom_entity
+from .drawing_analyser_utils import DrawingAnalyserUtils
+from .drawing_custom_entity import *
 import ezdxf.addons.odafc
 
 class DrawingAnalyser:
 	def __init__(self, name, file_name) -> None:
 		self.name = name
 		self.file_name = file_name
-		
 		import sys
 		try:
-			if file_name.endswith('.dwg'):
-				print("Converting DWG to DXF")
-				converter = drawing_converter.DrawingConverter(r"/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileConverter")
-				file_name = converter.convert_dwg_to_dxf(file_name)
+			# if file_name.endswith('.dwg'):
+			# 	print("Converting DWG to DXF")
+			# 	converter = drawing_converter.DrawingConverter(r"/Applications/ODAFileConverter.app/Contents/MacOS/ODAFileConverter")
+			# 	file_name = converter.convert_dwg_to_dxf(file_name)
 			doc = ezdxf.readfile(file_name)
 		except Exception as e:
 			print(f"Error: {e}")
 			sys.exit(1)
 		self.doc = doc
 		self.msp = doc.modelspace()
-		ent = self.get_entities()
-		for e in ent:
-			print(str(e))
-		# self.included_entities = []
-		# self.utils = drawing_analyser_utils.DrawingAnalyserUtils(self.msp)
-		# self.tester = drawing_tester.DrawingTester()
+		self.entities = self.__get_entities()
+		# for e in self.entities:
+		# 	print(str(e))
 
-	def get_entities(self) -> [drawing_custom_entity.CustomEntity]:
+	def get_total_length(self) -> float:
+		total_length = 0.0
+		for entity in self.entities:
+			total_length += entity.get_length()
+		return total_length
+
+	def __get_entities(self) -> [CustomEntity]:
 		entities = []
 		for entity in self.msp:
-			entities.append(drawing_custom_entity.CustomEntity.get_instance(entity))
+			if CustomEntity.get_instance(entity) is not None:
+				entities.append(CustomEntity.get_instance(entity))
 		return entities
 
-	def	get_holes(self) -> [ezdxf.entities.circle.Circle]:
-		hole_centers = []
-		for entity in self.msp:
-			if entity.dxftype() == 'CIRCLE':
-				hole_centers.append(entity)
-		return hole_centers
+	# TODO: Implement the following method
+	def get_cut_ins_count(self) -> int:
+		pass
 
-	def	get_holes_count(self) -> int:
-		return len(self.get_holes())
-	
-	def get_entities_types(self) -> [str]:
-		print(f"Getting entities in {self.name}")
-		return [entity.dxftype() for entity in self.msp]
+	# def __visualize_included_entities(self) -> None:
+	# 	from pathlib import Path
+	# 	Path("output").mkdir(parents=True, exist_ok=True)
+	# 	output_file_name = f"output/{Path(self.file_name).name.replace(".dxf", "_filtered.dxf")}"
+	# 	new_doc = ezdxf.new(dxfversion=self.doc.dxfversion)
+	# 	new_msp = new_doc.modelspace()
+	# 	all_entities = self.__get_analysed_entities()
+	# 	for entity, is_included in all_entities:
+	# 		if entity.dxftype() == 'LINE':
+	# 			new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
+	# 		elif entity.dxftype() == 'ARC':
+	# 			new_msp.add_arc(
+	# 				center=entity.dxf.center,
+	# 				radius=entity.dxf.radius,
+	# 				start_angle=entity.dxf.start_angle,
+	# 				end_angle=entity.dxf.end_angle,
+	# 				dxfattribs={'color': entity.dxf.color}
+	# 			)
+	# 		elif entity.dxftype() == 'POLYLINE':
+	# 			new_msp.add_polyline2d(entity.points(), dxfattribs={'color': entity.dxf.color})		
+	# 		elif entity.dxftype() == 'CIRCLE':
+	# 			new_msp.add_circle(entity.dxf.center, entity.dxf.radius, dxfattribs={'color': entity.dxf.color})
+	# 	new_doc.saveas(output_file_name)
+	# 	self.__clear_included_entities()
+	# 	print(f"Filtered entities saved to {output_file_name}")
 
-	# def get_entities(self) -> []:
-	# 	entities = []
-	# 	for entity in self.msp:
-	# 		entities.append(entity)
-	# 	return entities
-
-	def	get_total_cut_length(self) -> float:
-		print("Getting the total length of laser cutting")
-		total_length = 0.0
-		total_length += self.get_total_polylines_length()
-		total_length += self.get_total_lines_length()
-		total_length += self.get_total_arcs_length()
-		return total_length
-
-	def	get_total_polylines_length(self) -> float:
-		print("Getting the total length of polylines")
-		total_length = 0.0
-		for polyline in self.msp.query('POLYLINE'):
-			self.__add_to_included_entities(polyline)
-			total_length += self.get_polyline_length(polyline)
-		return total_length
-
-	def	get_total_lines_length(self) -> float:
-		print("Getting the total length of lines")
-		total_length = 0.0
-		for line in self.msp.query('LINE'):
-			self.__add_to_included_entities(line)
-			total_length += self.get_line_length(line)
-		return total_length
-
-	def	get_total_arcs_length(self) -> float:
-		print("Getting the total length of arcs")
-		total_length = 0.0
-		for arc in self.msp.query('ARC'):
-			self.__add_to_included_entities(arc)
-			total_length += self.get_arc_length(arc)
-		return total_length
-		
-	def	get_polyline_length(self, polyline: ezdxf.entities.Polyline) -> float:
-		poly_len = 0
-		for i in range(len(polyline)):
-			if i == 0:
-				continue
-			vertex = polyline.vertices[i]
-			poly_len += polyline.vertices[i].dxf.location.distance(polyline.vertices[i-1].dxf.location)
-		return poly_len
-
-	def	__clear_included_entities(self) -> None:
-		self.included_entities = []
-
-	def	__add_to_included_entities(self, entity) -> None:
-		self.included_entities.append(entity)
-
-	def __get_analysed_entities(self):
-		self.__clear_included_entities()
-		self.get_total_cut_length()
-		included = self.included_entities
-		all_entities = self.get_entities()
-		ret = []
-		for	entity in all_entities:
-			if not entity in included:
-				ret.append((entity, False))
-			else:
-				ret.append((entity, True))
-		return (ret)
-
-	def __visualize_included_entities(self) -> None:
-		from pathlib import Path
-		Path("output").mkdir(parents=True, exist_ok=True)
-		output_file_name = f"output/{Path(self.file_name).name.replace(".dxf", "_filtered.dxf")}"
-		new_doc = ezdxf.new(dxfversion=self.doc.dxfversion)
-		new_msp = new_doc.modelspace()
-		all_entities = self.__get_analysed_entities()
-		for entity, is_included in all_entities:
-			if entity.dxftype() == 'LINE':
-				new_msp.add_line(entity.dxf.start, entity.dxf.end, dxfattribs={'color': entity.dxf.color})
-			elif entity.dxftype() == 'ARC':
-				new_msp.add_arc(
-					center=entity.dxf.center,
-					radius=entity.dxf.radius,
-					start_angle=entity.dxf.start_angle,
-					end_angle=entity.dxf.end_angle,
-					dxfattribs={'color': entity.dxf.color}
-				)
-			elif entity.dxftype() == 'POLYLINE':
-				new_msp.add_polyline2d(entity.points(), dxfattribs={'color': entity.dxf.color})		
-			elif entity.dxftype() == 'CIRCLE':
-				new_msp.add_circle(entity.dxf.center, entity.dxf.radius, dxfattribs={'color': entity.dxf.color})
-		new_doc.saveas(output_file_name)
-		self.__clear_included_entities()
-		print(f"Filtered entities saved to {output_file_name}")
-
-	def	analyse(self) -> None:
-		self.__visualize_included_entities()
-		groups_count = self.get_element_groups_count()
-		print(f"Liczba wpaleń: {groups_count}")
+	# def	analyse(self) -> None:
+	# 	self.__visualize_included_entities()
+	# 	groups_count = self.get_element_groups_count()
+	# 	print(f"Liczba wpaleń: {groups_count}")
 
 	def get_element_groups_count(self) -> int:
 		"""
@@ -172,14 +97,14 @@ class DrawingAnalyser:
 				dfs(entity)
 		return components_count
 
-	def __choose_entity_color(self, connected_entities_groups) -> None:
-		for i in range(len(connected_entities_groups)):
-			if len(connected_entities_groups[i]) > 0:
-				for entity1, entity2 in connected_entities_groups[i]:
-					entity1.dxf.color, entity2.dxf.color = i + 2, i + 1
+	# def __choose_entity_color(self, connected_entities_groups) -> None:
+	# 	for i in range(len(connected_entities_groups)):
+	# 		if len(connected_entities_groups[i]) > 0:
+	# 			for entity1, entity2 in connected_entities_groups[i]:
+	# 				entity1.dxf.color, entity2.dxf.color = i + 2, i + 1
 
 	def __create_entity_adjacency_matrix(self) -> []:
-		entities = self.get_entities()
+		entities = self.__get_entities()
 		matrix = []
 		for i in range(len(entities)):
 			row = []
@@ -197,9 +122,9 @@ class DrawingAnalyser:
 			print(line)
 		return matrix
 		
-	def __str__(self) -> str:
-		return f"""
-DETAILS OF {self.file_name.upper()}
-Holes count: {self.get_holes_count()}
-Total laser cut length: {self.get_total_cut_length()}
-		"""
+# 	def __str__(self) -> str:
+# 		return f"""
+# DETAILS OF {self.file_name.upper()}
+# Holes count: {self.get_holes_count()}
+# Total laser cut length: {self.get_total_cut_length()}
+# 		"""
