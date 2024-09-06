@@ -10,28 +10,8 @@ class CustomEntity(ABC):
 		self.end_point: tuple = None
 		self.center: tuple = None
 		self.radius: tuple = None
-		self.__set_entity_points()
-
-	def __set_entity_points(self) -> None:
-		if self.entity.dxftype() == 'LINE':
-			self.start_point = self.__point_to_tuple(self.entity.dxf.start)
-			self.end_point = self.__point_to_tuple(self.entity.dxf.end)
-		elif self.entity.dxftype() == 'ARC':
-			self.start_point = self.__point_to_tuple(self.entity.start_point)
-			self.end_point = self.__point_to_tuple(self.entity.end_point)
-			self.center = self.__point_to_tuple(self.entity.dxf.center)
-			self.radius = self.entity.dxf.radius
-		elif self.entity.dxftype() == 'CIRCLE':
-			self.center = self.__point_to_tuple(self.entity.dxf.center)
-			self.start_point = self.__point_to_tuple(self.entity.dxf.center)
-			self.end_point = self.__point_to_tuple(self.entity.dxf.center)
-			self.radius = self.entity.dxf.radius
-		elif self.entity.dxftype() == 'POLYLINE':
-			self.points = [self.__point_to_tuple(point.dxf.location) for point in self.entity.vertices]
-		elif self.entity.dxftype() == 'LWPOLYLINE':
-			self.points = [(point[0], point[1]) for point in self.entity.vertices()]
-
-	def __point_to_tuple(self, point) -> tuple:
+		
+	def _point_to_tuple(self, point) -> tuple:
 		return (point.x, point.y)
 
 	def _is_point_connected(self, point: tuple) -> bool:
@@ -49,6 +29,8 @@ class CustomEntity(ABC):
 			return CustomLine(entity)
 		elif entity.dxftype() == "POLYLINE" or entity.dxftype() == "LWPOLYLINE":
 			return CustomPoly(entity)
+		elif entity.dxftype() == "SPLINE":
+			return CustomSpline(entity)
 
 	@abstractmethod
 	def get_length(self) -> float:
@@ -66,6 +48,13 @@ class CustomEntity(ABC):
 		return round(number, 3)
 
 class CustomCircle(CustomEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.center = self._point_to_tuple(self.entity.dxf.center)
+		self.start_point = self._point_to_tuple(self.entity.dxf.center)
+		self.end_point = self._point_to_tuple(self.entity.dxf.center)
+		self.radius = self.entity.dxf.radius
+
 	def get_length(self) -> float:
 		return (math.pi * 2 * self.radius)
 
@@ -76,6 +65,13 @@ class CustomCircle(CustomEntity):
 		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self._format_number(self.get_length())}"
 
 class CustomArc(CustomEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.start_point = self._point_to_tuple(self.entity.start_point)
+		self.end_point = self._point_to_tuple(self.entity.end_point)
+		self.center = self._point_to_tuple(self.entity.dxf.center)
+		self.radius = self.entity.dxf.radius
+
 	def get_length(self) -> float:
 		arc: ezdxf.entities.Arc = self.entity
 		start_point = arc.start_point
@@ -95,6 +91,11 @@ class CustomArc(CustomEntity):
 		return f"Arc with center: {self.center}, radius: {self._format_number(self.radius)}, start_point: {self.start_point}, end_point: {self.end_point} and length: {self._format_number(self.get_length())}"
 
 class CustomLine(CustomEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.start_point = self._point_to_tuple(self.entity.dxf.start)
+		self.end_point = self._point_to_tuple(self.entity.dxf.end)
+
 	def	get_length(self) -> float:
 		line: ezdxf.entities.Line = self.entity
 		return line.dxf.start.distance(line.dxf.end)
@@ -108,7 +109,10 @@ class CustomLine(CustomEntity):
 class CustomPoly(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		super().__init__(entity)
-		self.points = self.points
+		if self.entity.dxftype() == 'POLYLINE':
+			self.points = [self._point_to_tuple(point.dxf.location) for point in self.entity.vertices]
+		elif self.entity.dxftype() == 'LWPOLYLINE':
+			self.points = [(point[0], point[1]) for point in self.entity.vertices()]
 		self.is_closed = self.entity.is_closed
 
 	def get_length(self) -> float:
@@ -140,3 +144,28 @@ class CustomPoly(CustomEntity):
 
 	def __str__(self) -> str:
 		return f"Polyline with points: {self.points} and length: {self._format_number(self.get_length())}"
+
+class CustomSpline(CustomEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.control_points = [(point[0], point[1], point[2]) for point in self.entity.control_points]
+
+	def get_length(self) -> float:
+		total = 0.0
+		e: ezdxf.entities.Spline = self.entity
+		points = e.control_points
+		for i in range(len(points) - 1):
+			x1, y1, z1 = points[i][0], points[i][1], points[i][2]
+			x2, y2, z2 = points[i + 1][0], points[i + 1][1], points[i + 1][2]
+			ds = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2 + (z2 - z1) ** 2)
+			total = total + ds
+		return (total)
+
+	def is_connected(self, entity: CustomEntity) -> bool:
+		for point in self.control_points:
+			if self.__compare_points(point, entity.start_point) or self.__compare_points(point, entity.end_point):
+				return (True)
+		return (False)
+
+	def __str__(self) -> str:
+		return f"Spline with control points: {self.control_points} and length: {self._format_number(self.get_length())}"

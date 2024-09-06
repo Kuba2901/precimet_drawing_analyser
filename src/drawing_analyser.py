@@ -33,8 +33,11 @@ class DrawingAnalyser:
 	def __get_entities(self) -> [CustomEntity]:
 		entities = []
 		for entity in self.msp:
-			if CustomEntity.get_instance(entity) is not None:
-				entities.append(CustomEntity.get_instance(entity))
+			ent = CustomEntity.get_instance(entity)
+			if ent is not None:
+				entities.append(ent)
+			# else:
+			# 	print(f"Entity {entity.dxftype()} not supported")
 		return entities
 
 	# TODO: Implement the following method
@@ -122,9 +125,8 @@ class DrawingAnalyser:
 			print(line)
 		return matrix
 		
-# 	def __str__(self) -> str:
-# 		return f"""
-# DETAILS OF {self.file_name.upper()}
-# Holes count: {self.get_holes_count()}
-# Total laser cut length: {self.get_total_cut_length()}
-# 		"""
+	def __str__(self) -> str:
+		return f"""
+DETAILS OF {self.file_name.upper()}
+Total laser cut length: {self.get_total_length()}
+		""" 

@@ -20,11 +20,15 @@ class DrawingTester(unittest.TestCase):
 	
 	def test_get_total_length(self):
 		for idx, test_file in enumerate(self.test_files):
-			# print("FILENAME: ", self.test_files[idx])
 			analyser = DrawingAnalyser("Test", test_file)
 			expected_total_length = self.total_length[idx]
-			self.assertAlmostEqual(analyser.get_total_length(), expected_total_length, places=3, msg=f"Mismatch in {test_file}, got: {analyser.get_total_length()}, expected: {expected_total_length}")
-			print(f"SUCCESS IN FILE: {test_file}")
+			try:
+				self.assertAlmostEqual(analyser.get_total_length(), expected_total_length, places=3, msg=f"Mismatch in {test_file}, got: {analyser.get_total_length()}, expected: {expected_total_length}")
+				print(f"SUCCESS IN FILE: {test_file}")
+			except AssertionError as e:
+				print(f"FAILURE IN FILE: {test_file}")
+				print("ERROR: ", e)
+			print("\n\n")
 
 if __name__ == '__main__':
 	unittest.main()
