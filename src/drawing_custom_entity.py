@@ -2,6 +2,14 @@ import ezdxf
 import ezdxf.math
 from abc import ABC, abstractmethod
 import math
+from enum import Enum
+
+class CustomEntityType(Enum):
+	CIRCLE = 1
+	ARC = 2
+	LINE = 3
+	POLY = 4
+	SPLINE = 5
 
 class CustomEntity(ABC):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
@@ -11,6 +19,7 @@ class CustomEntity(ABC):
 		self.center: tuple = None
 		self.radius: tuple = None
 		self.points = None
+		self.type = None
 		
 	def _point_to_tuple(self, point) -> tuple:
 		return (point.x, point.y)
@@ -21,6 +30,21 @@ class CustomEntity(ABC):
 			if is_close:
 				return (True)
 		return (False)
+
+	def _remove_duplicated_points(self) -> None:
+		for i in range(len(self.points) - 1, -1, -1):
+			p1 = self.points[i]
+			for j in range (i - 1, 0):
+				p2 = self.points[j]
+				if (p1[0] == p2[0] and p1[1] == p2[1]):
+					self.points.pop(i)
+
+	def get_turns_count(self) -> int:
+		return (0)
+
+	@abstractmethod
+	def is_curvy_type(self) -> bool:
+		pass
 
 	@staticmethod
 	def get_instance(entity : ezdxf.entities.DXFEntity):
@@ -59,12 +83,17 @@ class CustomCircle(CustomEntity):
 		self.center = self._point_to_tuple(self.entity.dxf.center)
 		self.radius = self.entity.dxf.radius
 		self.points = [self.center]
+		self.type = CustomEntityType.CIRCLE
+		self._remove_duplicated_points()
 
 	def get_length(self) -> float:
 		return (math.pi * 2 * self.radius)
 
 	def is_connected(self, entity) -> bool:
 		return (False)
+
+	def is_curvy_type(self) -> bool:
+		return (True)
 	
 	def __str__(self) -> str:
 		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self._format_number(self.get_length())}"
@@ -77,6 +106,8 @@ class CustomArc(CustomEntity):
 		start_point = self._point_to_tuple(self.entity.start_point)
 		end_point = self._point_to_tuple(self.entity.end_point)
 		self.points = [start_point, end_point]
+		self.type = CustomEntityType.ARC
+		self._remove_duplicated_points()
 
 	def get_length(self) -> float:
 		arc: ezdxf.entities.Arc = self.entity
@@ -91,6 +122,9 @@ class CustomArc(CustomEntity):
 
 	def __str__(self) -> str:
 		return f"Arc with center: {self.center}, radius: {self._format_number(self.radius)}, start_point: {self.start_point}, end_point: {self.end_point} and length: {self._format_number(self.get_length())}"
+	
+	def is_curvy_type(self) -> bool:
+		return (True)
 
 class CustomLine(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
@@ -98,13 +132,15 @@ class CustomLine(CustomEntity):
 		start_point = self._point_to_tuple(self.entity.dxf.start)
 		end_point = self._point_to_tuple(self.entity.dxf.end)
 		self.points = [start_point, end_point]
+		self.type = CustomEntityType.LINE
+		self._remove_duplicated_points()
 
 	def	get_length(self) -> float:
 		line: ezdxf.entities.Line = self.entity
 		return line.dxf.start.distance(line.dxf.end)
 
-	# def is_connected(self, entity: CustomEntity) -> bool:
-	# 	return self._is_point_connected(entity.start_point) or self._is_point_connected(entity.end_point)
+	def is_curvy_type(self) -> bool:
+		return (False)
 
 	def __str__(self) -> str:
 		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self._format_number(self.get_length())}"
@@ -117,6 +153,8 @@ class CustomPoly(CustomEntity):
 		elif self.entity.dxftype() == 'LWPOLYLINE':
 			self.points = [(point[0], point[1]) for point in self.entity.vertices()]
 		self.is_closed = self.entity.is_closed
+		self.type = CustomEntityType.POLY
+		self._remove_duplicated_points()
 
 	def get_length(self) -> float:
 		total = 0.0
@@ -135,23 +173,26 @@ class CustomPoly(CustomEntity):
 			total += math.dist(p, q)
 		return (total)
 
-	# def is_connected(self, entity: CustomEntity) -> bool:
-	# 	for point in self.points:
-	# 		if self.__compare_points(point, entity.start_point) or self.__compare_points(point, entity.end_point):
-	# 			return (True)
-	# 	return (False)
-
-	# def __compare_points(self, p: tuple, q: tuple) -> bool:
-	# 	start: bool = math.isclose(p[0], q[0]) and math.isclose(p[1], q[1])
-	# 	return (start)
-
 	def __str__(self) -> str:
 		return f"Polyline with points: {self.points} and length: {self._format_number(self.get_length())}"
+
+	def is_curvy_type(self) -> bool:
+		return (False)
+
+	def get_turns_count(self) -> int:
+		print("GET_TURNS_COUNT")
+		print("POINTS: ", self.points)
+		turns_count = len(self.points) - 1
+		if self.is_closed:
+			turns_count += 1
+		return (turns_count)
 
 class CustomSpline(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.Spline):
 		super().__init__(entity)
 		self.points = [(float(point[0]), float(point[1]), float(point[2])) for point in self.entity.control_points]
+		self.type = CustomEntityType.SPLINE
+		self._remove_duplicated_points()
 
 	def get_length(self) -> float:
 		total = 0.0
@@ -174,6 +215,9 @@ class CustomSpline(CustomEntity):
 	# 		elif self.__compare_points(point, entity.start_point) or self.__compare_points(point, entity.end_point):
 	# 			return (True)
 	# 	return (False)
+
+	def is_curvy_type(self) -> bool:
+		return (True)
 
 	def __str__(self) -> str:
 		return f"Spline with control points: {self.points} and length: {self._format_number(self.get_length())}"

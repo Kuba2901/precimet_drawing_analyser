@@ -21,6 +21,7 @@ class DrawingAnalyser:
 		self.doc = doc
 		self.msp = doc.modelspace()
 		self.entities = self.__get_entities()
+		self.adj_matrix = self.__create_entity_adjacency_matrix()
 		# for e in self.entities:
 		# 	print(str(e))
 
@@ -39,7 +40,7 @@ class DrawingAnalyser:
 		return entities
 
 	def get_cut_ins_count(self) -> int:
-		return self.get_element_groups_count()
+		return self.__get_element_groups_count()
 
 	# def __visualize_included_entities(self) -> None:
 	# 	from pathlib import Path
@@ -72,7 +73,38 @@ class DrawingAnalyser:
 	# 	groups_count = self.get_element_groups_count()
 	# 	print(f"Liczba wpaleń: {groups_count}")
 
-	def get_element_groups_count(self) -> int:
+	def get_turns_count(self) -> int:
+		turns_count = 0
+		visited = [False] * len(self.entities)
+		print(self.adj_matrix)
+		def dfs(current_entity, prev_entity=None):
+			nonlocal turns_count
+			visited[current_entity] = True
+
+			# TODO: Add logic here to check for a turn between prev_entity and current_entity
+			# If a turn is detected, increment turns_count
+
+			ce = self.entities[current_entity]
+			turns_count += ce.get_turns_count()
+
+			for next_entity, is_connected in enumerate(self.adj_matrix[current_entity]):
+				if is_connected and not visited[next_entity]:
+					dfs(next_entity, current_entity)
+
+		# Start DFS from each unvisited entity
+		for entity in range(len(self.entities)):
+			if not visited[entity]:
+				dfs(entity)
+		return turns_count
+
+
+	def __find_common_point(self, prev_entity: CustomEntity, current_entity: CustomEntity) -> tuple:
+		for p1 in prev_entity.points:
+			if current_entity._is_point_connected(p1):
+				return (p1, prev_entity.points.index(p1))
+		return (None)
+
+	def __get_element_groups_count(self) -> int:
 		"""
 		Count the number of separate components (connected elements) in the adjacency matrix.
 
@@ -80,7 +112,7 @@ class DrawingAnalyser:
 						indicates a connection between entity i and entity j.
 		:return: Number of separate connected components.
 		"""
-		adj_matrix = self.__create_entity_adjacency_matrix()
+		adj_matrix = self.adj_matrix
 		num_entities = len(adj_matrix)
 		visited = [False] * num_entities
 		components_count = 0
@@ -103,7 +135,7 @@ class DrawingAnalyser:
 		for i in range(len(entities)):
 			row = []
 			for j in range(len(entities)):
-				row.append(0) # TODO: Verify if not 1
+				row.append(0)
 			matrix.append(row)
 		for i in range(len(entities)):
 			matrix[i][i] = 1
@@ -112,8 +144,6 @@ class DrawingAnalyser:
 				connected = 1 if entity1.is_connected(entity2) else 0
 				matrix[i][j] = connected
 				matrix[j][i] = connected
-		# for line in matrix:
-		# 	print(line)
 		return matrix
 		
 	def __str__(self) -> str:
@@ -121,4 +151,5 @@ class DrawingAnalyser:
 DETAILS OF {self.file_name.upper()}
 Total laser cut length: {self.get_total_length()}
 Number of cut-ins: {self.get_cut_ins_count()}
+Number of turns: {self.get_turns_count()}
 		""" 

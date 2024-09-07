@@ -11,6 +11,7 @@ class DrawingTester(unittest.TestCase):
 		print(self.test_files)
 		self.holes_count = [3, 1, 4, 4, 3, 5, 1, 30]
 		self.total_length = [247.984, 886.735, 150.078, 267.115, 4599.98, 4248.53, 429.124, 1953.4]
+		self.turns_count = [4, 4, 8, 8, 12, 20, 6, 88]
 	
 	def test_get_holes_count(self):
 		"""
@@ -39,6 +40,23 @@ class DrawingTester(unittest.TestCase):
 			expected_total_length = self.total_length[idx]
 			try:
 				self.assertAlmostEqual(analyser.get_total_length(), expected_total_length, places=2, msg=f"Mismatch in {test_file}, got: {analyser.get_total_length()}, expected: {expected_total_length}")
+				print(f"SUCCESS IN FILE: {test_file}")
+			except AssertionError as e:
+				print(f"FAILURE IN FILE: {test_file}")
+				print("ERROR: ", e)
+			print("\n")
+
+	def test_get_turns_count(self):
+		"""
+		Ensure that the number of turns in the drawing is correct
+		"""
+		print("TURNS COUNT TEST")
+		for idx, test_file in enumerate(self.test_files):
+			analyser = DrawingAnalyser("Test", test_file)
+			expected_turns_count = self.turns_count[idx]
+			turns = analyser.get_turns_count()
+			try:
+				self.assertEqual(turns, expected_turns_count, f"Mismatch in {test_file}, got: {turns}, expected: {expected_turns_count}")
 				print(f"SUCCESS IN FILE: {test_file}")
 			except AssertionError as e:
 				print(f"FAILURE IN FILE: {test_file}")
