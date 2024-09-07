@@ -77,6 +77,12 @@ class CustomEntity(ABC):
 	def _format_number(self, number: float) -> float:
 		return round(number, 3)
 
+	def find_common_point(self, entity):
+		for idx, p1 in enumerate(self.points):
+			if entity._is_point_connected(p1):
+				return (p1, idx)
+		return (None)
+
 class CustomCircle(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		super().__init__(entity)
@@ -180,8 +186,6 @@ class CustomPoly(CustomEntity):
 		return (False)
 
 	def get_turns_count(self) -> int:
-		print("GET_TURNS_COUNT")
-		print("POINTS: ", self.points)
 		turns_count = len(self.points) - 1
 		if self.is_closed:
 			turns_count += 1

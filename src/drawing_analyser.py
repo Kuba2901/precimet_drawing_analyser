@@ -22,8 +22,6 @@ class DrawingAnalyser:
 		self.msp = doc.modelspace()
 		self.entities = self.__get_entities()
 		self.adj_matrix = self.__create_entity_adjacency_matrix()
-		# for e in self.entities:
-		# 	print(str(e))
 
 	def get_total_length(self) -> float:
 		total_length = 0.0
@@ -96,13 +94,6 @@ class DrawingAnalyser:
 			if not visited[entity]:
 				dfs(entity)
 		return turns_count
-
-
-	def __find_common_point(self, prev_entity: CustomEntity, current_entity: CustomEntity) -> tuple:
-		for p1 in prev_entity.points:
-			if current_entity._is_point_connected(p1):
-				return (p1, prev_entity.points.index(p1))
-		return (None)
 
 	def __get_element_groups_count(self) -> int:
 		"""
