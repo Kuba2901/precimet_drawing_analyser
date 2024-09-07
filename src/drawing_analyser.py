@@ -74,16 +74,18 @@ class DrawingAnalyser:
 	def get_turns_count(self) -> int:
 		turns_count = 0
 		visited = [False] * len(self.entities)
-		print(self.adj_matrix)
 		def dfs(current_entity, prev_entity=None):
 			nonlocal turns_count
 			visited[current_entity] = True
 
 			# TODO: Add logic here to check for a turn between prev_entity and current_entity
 			# If a turn is detected, increment turns_count
-
+			
 			ce = self.entities[current_entity]
-			turns_count += ce.get_turns_count()
+			if ce.type == CustomEntityType.POLY:
+				turns_count += ce.get_turns_count()
+			elif current_entity != 0:
+				turns_count += 1
 
 			for next_entity, is_connected in enumerate(self.adj_matrix[current_entity]):
 				if is_connected and not visited[next_entity]:
