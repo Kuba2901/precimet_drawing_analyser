@@ -41,7 +41,17 @@ class PMAnalyserUtils:
 		types = {}
 		for entity in self.pm_analyser.entities:
 			print(entity.type)
-		print(types)
+
+	def print_entities_locations(self) -> None:
+		for entity in self.pm_analyser.entities:
+			print(f"""
+{entity.type}:
+Start: {entity.start_point}
+End: {entity.end_point}
+Length: {entity.get_length()}
+\n
+\n
+			""")
 
 	def __get_total_entities_count(self) -> int:
 		return len(self.pm_analyser.entities)

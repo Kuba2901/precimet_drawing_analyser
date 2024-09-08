@@ -177,7 +177,12 @@ class PMArc(PMEntity):
 		self.end_point = PMPoint(self.entity.end_point.x, self.entity.end_point.y)
 
 	def get_length(self) -> float:
-		return (2 * math.pi * self.radius * (abs(self.end_angle - self.start_angle) / 360))
+		start_angle = self.start_angle
+		end_angle = self.end_angle
+		if (end_angle - start_angle) < 0:
+			end_angle += 360
+		arc_length = self.radius * math.radians(abs(end_angle - start_angle))
+		return (arc_length)
 
 	def __str__(self) -> str:
 		return f"Arc with center: {self.center}, radius: {self.radius}, start_angle: {self.start_angle}, end_angle: {self.end_angle} and length: {self.get_length()}"
