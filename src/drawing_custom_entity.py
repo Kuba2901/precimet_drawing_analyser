@@ -11,14 +11,76 @@ class CustomEntityType(Enum):
 	POLY = 4
 	SPLINE = 5
 
+class CustomPoint:
+	def __init__(self, x: float, y: float):
+		self.x = x
+		self.y = y
+
+	def __eq__(self, other):
+		return (self.x == other.x and self.y == other.y) or (self.__is_close(other))
+
+	def __is_close(self, other):
+		return (math.isclose(self.x, other.x) and math.isclose(self.y, other.y))
+
+	def __str__(self):
+		return f"({self.x}, {self.y})"
+
+class CustomLineSegment:
+	def __init__(self, start_point: CustomPoint, end_point: CustomPoint):
+		self.start_point = start_point
+		self.end_point = end_point
+		self.length = self.__get_length()
+
+	def __get_common_point(self, other):
+		if self.start_point == other.start_point or self.start_point == other.end_point:
+			return (self.start_point)
+		elif self.end_point == other.start_point or self.end_point == other.end_point:
+			return (self.end_point)
+		return (None)
+
+	def __get_angle(self, other):
+		common_point = self.__get_common_point(other)
+		if common_point is None:
+			return None
+		
+		# Vector for this line segment
+		v1x = self.end_point.x - self.start_point.x
+		v1y = self.end_point.y - self.start_point.y
+		
+		# Vector for the other line segment
+		if other.start_point == common_point:
+			v2x = other.end_point.x - other.start_point.x
+			v2y = other.end_point.y - other.start_point.y
+		else:
+			v2x = other.start_point.x - other.end_point.x
+			v2y = other.start_point.y - other.end_point.y
+		
+		# Calculate the angle using dot product and cross product
+		dot_product = v1x * v2x + v1y * v2y
+		cross_product = v1x * v2y - v1y * v2x
+		
+		angle = math.atan2(cross_product, dot_product)
+		
+		# Convert to degrees if needed
+		angle_degrees = math.degrees(angle)
+		
+		return angle_degrees
+
+
+	def __get_length(self):
+		return math.dist((self.start_point.x, self.start_point.y), (self.end_point.x, self.end_point.y))
+
+	def __str__(self):
+		return f"Start: {self.start_point}, End: {self.end_point}"
+
 class CustomEntity(ABC):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		self.entity: ezdxf.entities.DXFEntity = entity
-		self.start_point: tuple = None
-		self.end_point: tuple = None
-		self.center: tuple = None
-		self.radius: tuple = None
-		self.points = None
+		self.start_point: CustomPoint = None
+		self.end_point: CustomPoint = None
+		self.center: CustomPoint = None
+		self.radius: float = None
+		self.points: [CustomPoint] = None
 		self.type = None
 		
 	def _point_to_tuple(self, point) -> tuple:
@@ -191,6 +253,18 @@ class CustomPoly(CustomEntity):
 			turns_count += 1
 		return (turns_count)
 
+	def to_custom_line_segments(self) -> [CustomLineSegment]:
+		line_segments = []
+		for i in range(len(self.points) - 1):
+			start_point = CustomPoint(self.points[i][0], self.points[i][1])
+			end_point = CustomPoint(self.points[i + 1][0], self.points[i + 1][1])
+			line_segments.append(CustomLineSegment(start_point, end_point))
+		if self.is_closed:
+			start_point = CustomPoint(self.points[-1][0], self.points[-1][1])
+			end_point = CustomPoint(self.points[0][0], self.points[0][1])
+			line_segments.append(CustomLineSegment(start_point, end_point))
+		return line_segments
+
 class CustomSpline(CustomEntity):
 	def __init__(self, entity: ezdxf.entities.Spline):
 		super().__init__(entity)
@@ -208,17 +282,6 @@ class CustomSpline(CustomEntity):
 			# ds = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
 			total = total + ds
 		return (total)
-
-	# def is_connected(self, entity: CustomEntity) -> bool:
-	# 	print("IS_CONNECTED")
-	# 	for point in self.points:
-	# 		if isinstance(entity, CustomSpline):
-	# 			for entity_point in entity.points:
-	# 				if self.__compare_points(point, entity_point):
-	# 					return (True)
-	# 		elif self.__compare_points(point, entity.start_point) or self.__compare_points(point, entity.end_point):
-	# 			return (True)
-	# 	return (False)
 
 	def is_curvy_type(self) -> bool:
 		return (True)
