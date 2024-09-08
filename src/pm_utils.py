@@ -127,41 +127,81 @@ Length: {entity.get_length()}
 				dfs(entity)
 		return components_count
 
+	def find_interconnected_groups(self) -> []:
+		adj_matrix = self.pm_analyser.adj_matrix
+		n = len(adj_matrix)  # Number of nodes
+		visited = [False] * n  # Track visited nodes
+		connected_groups = []  # Store the result groups
+		
+		def dfs(node, adj_matrix, visited, group):
+			# Mark the node as visited and add it to the current group
+			visited[node] = True
+			group.append(node)
+			
+			# Traverse all nodes connected to the current node
+			for neighbor in range(len(adj_matrix)):
+				if adj_matrix[node][neighbor] == 1 and not visited[neighbor]:
+					dfs(neighbor, adj_matrix, visited, group)
+
+		# Traverse each node and apply DFS if it's unvisited
+		for node in range(n):
+			if not visited[node]:
+				group = []  # Create a new group
+				dfs(node, adj_matrix, visited, group)
+				connected_groups.append(group)  # Add the group to the result
+		
+		return connected_groups
+
+	def print_interconnected_groups(self) -> None:
+		connected_groups = self.find_interconnected_groups()
+		print(Fore.CYAN, "Interconnected groups:")
+		for idx, group in enumerate(connected_groups):
+			print(f"Group {idx + 1}: {group}")
+			if idx == 2:
+				for entity_idx in group:
+					print(self.pm_analyser.entities[entity_idx])
+		print(Style.RESET_ALL, end='')
+
+	def remove_duplicated_entities(self) -> None:
+		pass
+
 	def get_turns_count(self) -> int:
 		"""
 		Count the number of turns in the drawing.
 		A turn is a change in direction based on CustomEntity's start_point and end_point.
 		"""
-		adj = self.pm_analyser.adj_matrix
-		entities = self.pm_analyser.entities
-		visited = [False] * len(entities)
-		total_turns = [0]  # Using a list to pass by reference
+		return (0)
+		# adj = self.pm_analyser.adj_matrix
+		# entities = self.pm_analyser.entities
+		# visited = [False] * len(entities)
+		# total_turns = [0]  # Using a list to pass by reference
 		
-		def dfs(entity_idx, entities, adj, visited, start, prev_dir, total_turns):
-			visited[entity_idx] = True
-			for i in range(len(entities)):
-				if adj[entity_idx][i] == 1 and not visited[i]:
-					# Compute direction from current entity's end_point to the next entity's start_point
-					current_entity = entities[entity_idx]
-					next_entity = entities[i]
-					current_dir = (next_entity.start_point.x - current_entity.end_point.x, 
-								next_entity.start_point.y - current_entity.end_point.y)
+		# def dfs(entity_idx, entities, adj, visited, start, prev_dir, total_turns):
+		# 	visited[entity_idx] = True
+		# 	for i in range(len(entities)):
+		# 		if adj[entity_idx][i] == 1 and not visited[i]:
+		# 			# Compute direction from current entity's end_point to the next entity's start_point
+		# 			current_entity = entities[entity_idx]
+		# 			next_entity = entities[i]
+		# 			current_dir = (next_entity.start_point.x - current_entity.end_point.x, 
+		# 						next_entity.start_point.y - current_entity.end_point.y)
 					
-					# Check if there's a turn (i.e., direction change)
-					if prev_dir is not None:
-						total_turns[0] += 1
+		# 			# Check if there's a turn (i.e., direction change)
+		# 			if prev_dir is not None:
+		# 				total_turns[0] += 1
 					
-					dfs(i, entities, adj, visited, start, current_dir, total_turns)
+		# 			dfs(i, entities, adj, visited, start, current_dir, total_turns)
 			
-			# If we return to the start, consider it a turn
-			if entity_idx != start and adj[entity_idx][start] == 1:
-				total_turns[0] += 1
+		# 	# If we return to the start, consider it a turn
+		# 	if entity_idx != start and adj[entity_idx][start] == 1:
+		# 		self.print_debug(f"Returned to start at: {entities[entity_idx].end_point}\n")
+		# 		total_turns[0] += 1
 		
-		# Start DFS from the first unvisited entity
-		for i in range(len(entities)):
-			if not visited[i]:
-				dfs(i, entities, adj, visited, i, None, total_turns)
+		# # Start DFS from the first unvisited entity
+		# for i in range(len(entities)):
+		# 	if not visited[i]:
+		# 		dfs(i, entities, adj, visited, i, None, total_turns)
 		
-		return total_turns[0]
+		# return total_turns[0]
 
 

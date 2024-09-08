@@ -19,6 +19,7 @@ class PMAnalyser:
 			self.total_cutting_length = self.utils.get_total_cutting_length()
 			self.cut_ins_count = self.utils.get_cut_ins_count()
 			self.turns_count = self.utils.get_turns_count()
+			self.utils.print_interconnected_groups()
 		except Exception as e:
 			print(f"Error: {e}")
 			sys.exit(1)

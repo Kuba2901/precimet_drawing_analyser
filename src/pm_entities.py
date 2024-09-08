@@ -157,7 +157,7 @@ class PMSpline(PMEntity):
 		return (total)
 
 	def __str__(self) -> str:
-		return f"Spline with control points: {self.points} and length: {self.get_length()}"
+		return f"Spline with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
 
 	def is_connected(self, entity) -> bool:
 		for p in self.points:
