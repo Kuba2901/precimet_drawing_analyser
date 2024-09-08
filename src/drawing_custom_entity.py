@@ -10,6 +10,7 @@ class CustomEntityType(Enum):
 	LINE = 3
 	POLY = 4
 	SPLINE = 5
+	LINE_SEGMENT = 6
 
 class CustomPoint:
 	def __init__(self, x: float, y: float):
@@ -25,16 +26,101 @@ class CustomPoint:
 	def __str__(self):
 		return f"({self.x}, {self.y})"
 
+class PMEntity(ABC):
+	def __init__(self, entity: ezdxf.entities.DXFEntity = None, start_point: CustomPoint = None, end_point: CustomPoint = None):
+		self.entity = entity
+		self.points = None
+		self.type = None
+		self.radius = None
+		self.center = None
+		self.start_point = start_point
+		self.end_point = end_point
+		self.is_curvy = False
+
+	@abstractmethod
+	def get_length(self) -> float:
+		pass
+
+	def is_connected(self, entity) -> bool:
+		if self.start_point == entity.start_point or self.start_point == entity.end_point:
+			return (True)
+		elif self.end_point == entity.start_point or self.end_point == entity.end_point:
+			return (True)
+		return (False)
+
+class PMLineSegment(PMEntity):
+	def __init__(self, start_point: CustomPoint, end_point: CustomPoint):
+		super().__init__(entity, start_point, end_point)
+		self.length = self.get_length()
+		self.type = CustomEntityType.LINE_SEGMENT
+
+	def get_length(self) -> float:
+		return math.dist([self.start_point.x, self.start_point.y], [self.end_point.x, self.end_point.y])
+
+	def __str__(self):
+		return f"Start: {self.start_point}, End: {self.end_point}"
+
+class PMCircle(PMEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.center = CustomPoint(self.entity.dxf.center.x, self.entity.dxf.center.y)
+		self.radius = self.entity.dxf.radius
+		self.type = CustomEntityType.CIRCLE
+		self.is_curvy = True
+
+	def get_length(self) -> float:
+		return (math.pi * 2 * self.radius)
+
+	def is_connected(self, entity) -> bool:
+		return (False)
+
+	def __str__(self) -> str:
+		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self.get_length()}"
+
+class PMLine(PMEntity):
+	def __init__(self, entity: ezdxf.entities.DXFEntity):
+		super().__init__(entity)
+		self.start_point = CustomPoint(self.entity.dxf.start.x, self.entity.dxf.start.y)
+		self.end_point = CustomPoint(self.entity.dxf.end.x, self.entity.dxf.end.y)
+		self.type = CustomEntityType.LINE
+		self.is_curvy = False
+
+	def	get_length(self) -> float:
+		line: ezdxf.entities.Line = self.entity
+		return line.dxf.start.distance(line.dxf.end)
+
+	def __str__(self) -> str:
+		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+
+class PMSpline(PMEntity):
+	def __init__(self, entity: ezdxf.entities.Spline):
+		super().__init__(entity)
+		self.points = [CustomPoint(float(point[0]), float(point[1])) for point in self.entity.control_points]
+		self.type = CustomEntityType.SPLINE
+		self.is_curvy = True
+
+	def get_length(self) -> float:
+		total = 0.0
+		points = self.points
+		for i in range(len(points) - 1):
+			x1, y1 = points[i].x, points[i].y
+			x2, y2 = points[i + 1].x, points[i + 1].y
+			ds = math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2)
+			total = total + ds
+		return (total)
+
+	def __str__(self) -> str:
+		return f"Spline with control points: {self.points} and length: {self.get_length()}"
+
 class CustomEntity(ABC):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		self.entity: ezdxf.entities.DXFEntity = entity
 		self.start_point: CustomPoint = None
 		self.end_point: CustomPoint = None
-		self.center: CustomPoint = None
-		self.radius: float = None
 		self.points: [CustomPoint] = None
 		self.type = None
-		
+		self.radius: float = None
+		self.center: CustomPoint = None		
 
 	def _is_point_connected(self, point: CustomPoint) -> bool:
 		for p in self.points:
