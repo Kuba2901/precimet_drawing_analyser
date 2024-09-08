@@ -32,9 +32,21 @@ class DrawingAnalyser:
 	def __get_entities(self) -> [CustomEntity]:
 		entities = []
 		for entity in self.msp:
-			ent = CustomEntity.get_instance(entity)
-			if ent is not None:
-				entities.append(ent)
+			if entity.dxftype() == 'LINE':
+				start, end = CustomPoint(entity.dxf.start.x, entity.dxf.start.y), CustomPoint(entity.dxf.end.x, entity.dxf.end.y)
+				entities.append(CustomLineSegment(entity, start, end))
+			elif entity.dxftype() == 'POLYLINE' or entity.dxftype() == 'LWPOLYLINE':
+				poly = CustomPoly(entity)
+				for line_segment in poly.to_custom_line_segments():
+					entities.append(line_segment)
+			elif entity.dxftype() == 'ARC':
+				entities.append(CustomArc(entity))
+			elif entity.dxftype() == 'SPLINE':
+				entities.append(CustomSpline(entity))
+			elif entity.dxftype() == 'CIRCLE':
+				entities.append(CustomCircle(entity))
+		for entity in entities:
+			print(f"{str(entity)}\n\n")
 		return entities
 
 	def get_cut_ins_count(self) -> int:
@@ -78,10 +90,10 @@ class DrawingAnalyser:
 				turns_count += 1
 			ce = self.entities[self.adj_matrix.index(line)]
 			turns_count += ce.get_turns_count()
-			for val in line:
-				if val == 1 and line.index(val) != self.adj_matrix.index(line):
-					oe = self.entities[line.index(val)]
-					print(f"Turn at: {ce.find_common_point(oe)}")
+			# for val in line:
+			# 	if val == 1 and line.index(val) != self.adj_matrix.index(line):
+			# 		oe = self.entities[line.index(val)]
+					# print(f"Turn at: {ce.find_common_point(oe)}")
 			# print(line)
 		# visited = [False] * len(self.entities)
 		# def dfs(current_entity, prev_entity=None):
