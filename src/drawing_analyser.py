@@ -36,7 +36,6 @@ class DrawingAnalyser:
 				start, end = CustomPoint(entity.dxf.start.x, entity.dxf.start.y), CustomPoint(entity.dxf.end.x, entity.dxf.end.y)
 				entities.append(CustomLineSegment(entity, start, end))
 			elif entity.dxftype() == 'POLYLINE' or entity.dxftype() == 'LWPOLYLINE':
-				print("TYPE: ", entity.dxftype())
 				poly = CustomPoly(entity)
 				for line_segment in poly.to_custom_line_segments():
 					entities.append(line_segment)
@@ -85,25 +84,32 @@ class DrawingAnalyser:
 	def get_turns_count(self) -> int:
 		turns_count = 0
 		visited = [False] * len(self.entities)
-		def dfs(current_entity, prev_entity=None):
+
+		def dfs(current_entity, start_entity, prev_entity=None, depth=0):
 			nonlocal turns_count
 			visited[current_entity] = True
-
-			# TODO: Add logic here to check for a turn between prev_entity and current_entity
-			# If a turn is detected, increment turns_count
-			
 			ce = self.entities[current_entity]
+
 			if prev_entity is not None:
 				turns_count += 1
+				pe = self.entities[prev_entity]
+
+			# Check if we've returned to the start and it's not just the previous entity
+			if depth > 0 and ce.is_connected(start_entity):
+				turns_count += 1
+				return True  # Indicate that we've completed a cycle
 
 			for next_entity, is_connected in enumerate(self.adj_matrix[current_entity]):
 				if is_connected and not visited[next_entity]:
-					dfs(next_entity, current_entity)
+					if dfs(next_entity, start_entity, current_entity, depth + 1):
+						return True  # Propagate the cycle completion
+			return False  # This branch didn't complete a cycle
 
 		# Start DFS from each unvisited entity
 		for entity in range(len(self.entities)):
 			if not visited[entity]:
-				dfs(entity)
+				dfs(entity, self.entities[entity])
+
 		return turns_count
 
 	def __get_element_groups_count(self) -> int:
