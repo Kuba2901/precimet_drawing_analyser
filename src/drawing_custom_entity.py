@@ -139,7 +139,7 @@ class CustomLineSegment(CustomEntity):
 
 
 	def get_length(self):
-		return math.dist((self.start_point.x, self.start_point.y), (self.end_point.x, self.end_point.y))
+		return math.dist([self.start_point.x, self.start_point.y], [self.end_point.x, self.end_point.y])
 
 	def is_curvy_type(self) -> bool:
 		return (False)
@@ -220,8 +220,8 @@ class CustomPoly(CustomEntity):
 			self.points = [CustomPoint(point.dxf.location.x, point.dxf.location.y) for point in self.entity.vertices]
 		elif self.entity.dxftype() == 'LWPOLYLINE':
 			self.points = [CustomPoint(point[0], point[1]) for point in self.entity.vertices()]
-		self.is_closed = self.entity.is_closed
 		self.type = CustomEntityType.POLY
+		self.is_closed = self.entity.is_closed
 		self._remove_duplicated_points()
 
 	def get_length(self) -> float:
@@ -256,13 +256,9 @@ class CustomPoly(CustomEntity):
 	def to_custom_line_segments(self) -> [CustomLineSegment]:
 		line_segments = []
 		for i in range(len(self.points) - 1):
-			start_point = CustomPoint(self.points[i][0], self.points[i][1])
-			end_point = CustomPoint(self.points[i + 1][0], self.points[i + 1][1])
-			line_segments.append(CustomLineSegment(start_point, end_point))
+			line_segments.append(CustomLineSegment(self.entity, self.points[i], self.points[i + 1]))
 		if self.is_closed:
-			start_point = CustomPoint(self.points[-1][0], self.points[-1][1])
-			end_point = CustomPoint(self.points[0][0], self.points[0][1])
-			line_segments.append(CustomLineSegment(start_point, end_point))
+			line_segments.append(CustomLineSegment(self.entity, self.points[-1], self.points[0]))
 		return line_segments
 
 class CustomSpline(CustomEntity):
