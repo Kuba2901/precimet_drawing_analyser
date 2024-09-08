@@ -25,6 +25,9 @@ class PMPoint:
 	def __str__(self):
 		return f"({self.x}, {self.y})"
 
+	def __gt__(self, other):
+		return (self.x > other.x and self.y > other.y)
+
 class PMEntity(ABC):
 	def __init__(self, entity: ezdxf.entities.DXFEntity = None, start_point: PMPoint = None, end_point: PMPoint = None):
 		self.entity = entity
@@ -36,6 +39,11 @@ class PMEntity(ABC):
 		self.end_point = end_point
 		self.is_curvy = False
 		self.connectable = True
+
+
+	@abstractmethod
+	def __eq__(self, other):
+		pass
 
 	@abstractmethod
 	def get_length(self) -> float:
@@ -55,7 +63,9 @@ class PMEntity(ABC):
 	@staticmethod
 	def get_instance(entity: ezdxf.entities.DXFEntity) -> tuple:
 		if entity.dxftype() == 'LINE':
-			return (PMLine(entity), 1)
+			start_point = PMPoint(entity.dxf.start.x, entity.dxf.start.y)
+			end_point = PMPoint(entity.dxf.end.x, entity.dxf.end.y)
+			return (PMLineSegment(start_point=start_point, end_point=end_point), 1)
 		elif entity.dxftype() == 'CIRCLE':
 			return (PMCircle(entity), 1)
 		elif entity.dxftype() == 'ARC':
@@ -75,7 +85,7 @@ class PMLineSegment(PMEntity):
 		return math.dist([self.start_point.x, self.start_point.y], [self.end_point.x, self.end_point.y])
 
 	def __str__(self):
-		return f"Start: {self.start_point}, End: {self.end_point}"
+		return f"[Entity][PMLineSegment] Start: {self.start_point}, end: {self.end_point}, length: {self.length}"
 
 	@staticmethod
 	def poly_points_to_line_segments(points: [PMPoint], is_closed: bool) -> []:
@@ -104,6 +114,12 @@ class PMLineSegment(PMEntity):
 				points.pop(i)
 		return points
 
+	def __eq__(self, other):
+		if (other.type != PMEntityType.LINE_SEGMENT):
+			return (False)
+		return (self.start_point == other.start_point and self.end_point == other.end_point) \
+				or (self.start_point == other.end_point and self.end_point == other.start_point)
+
 class PMCircle(PMEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		super().__init__(entity)
@@ -122,6 +138,11 @@ class PMCircle(PMEntity):
 	def __str__(self) -> str:
 		return f"Circle with center: {self.center} and radius: {self.radius} and length: {self.get_length()}"
 
+	def __eq__(self, other):
+		if (other.type != PMEntityType.CIRCLE):
+			return (False)
+		return (self.center == other.center and self.radius == other.radius)
+
 class PMLine(PMEntity):
 	def __init__(self, entity: ezdxf.entities.DXFEntity):
 		super().__init__(entity)
@@ -136,6 +157,12 @@ class PMLine(PMEntity):
 
 	def __str__(self) -> str:
 		return f"Line with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+
+	def __eq__(self, other):
+		if (other.type != PMEntityType.LINE):
+			return (False)
+		return (self.start_point == other.start_point and self.end_point == other.end_point) \
+				or (self.start_point == other.end_point and self.end_point == other.start_point)
 
 class PMSpline(PMEntity):
 	def __init__(self, entity: ezdxf.entities.Spline):
@@ -157,12 +184,22 @@ class PMSpline(PMEntity):
 		return (total)
 
 	def __str__(self) -> str:
-		return f"Spline with start_point: {self.start_point}, end_point: {self.end_point} and length: {self.get_length()}"
+		return f"[Entity][Spline] Start: {self.start_point}, end: {self.end_point} and length: {self.get_length()}"
 
 	def is_connected(self, entity) -> bool:
 		for p in self.points:
 			if p == entity.start_point or p == entity.end_point:
 				return (True)
+
+	def __eq__(self, other):
+		if (other.type != PMEntityType.SPLINE):
+			return (False)
+		if (len(self.points) != len(other.points)):
+			return (False)
+		self_start, self_end = PMPoint(round(self.points[0].x), round(self.points[0].y)), PMPoint(round(self.points[-1].x), round(self.points[-1].y))
+		other_start, other_end = PMPoint(round(other.points[0].x), round(other.points[0].y)), PMPoint(round(other.points[-1].x), round(other.points[-1].y))
+		same = (self_start == other_start and self_end == other_end) or (self_start == other_end and self_end == other_start)
+		return same
 
 class PMArc(PMEntity):
 	def __init__(self, entity: ezdxf.entities.Arc):
@@ -189,3 +226,8 @@ class PMArc(PMEntity):
 
 	def is_connected(self, entity) -> bool:
 		return (self.start_point == entity.start_point or self.start_point == entity.end_point or self.end_point == entity.start_point or self.end_point == entity.end_point)
+
+	def __eq__(self, other):
+		if (other.type != PMEntityType.ARC):
+			return (False)
+		return (self.center == other.center and self.radius == other.radius and self.start_angle == other.start_angle and self.end_angle == other.end_angle)

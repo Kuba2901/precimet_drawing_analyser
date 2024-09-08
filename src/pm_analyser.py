@@ -18,8 +18,10 @@ class PMAnalyser:
 			self.adj_matrix = self.utils.create_entity_adjacency_matrix()
 			self.total_cutting_length = self.utils.get_total_cutting_length()
 			self.cut_ins_count = self.utils.get_cut_ins_count()
+			self.connected_groups = self.utils.find_interconnected_groups()
+			# self.utils.remove_duplicates()
+			# self.utils.print_interconnected_groups()
 			self.turns_count = self.utils.get_turns_count()
-			self.utils.print_interconnected_groups()
 		except Exception as e:
 			print(f"Error: {e}")
 			sys.exit(1)
