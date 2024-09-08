@@ -73,28 +73,37 @@ class DrawingAnalyser:
 
 	def get_turns_count(self) -> int:
 		turns_count = 0
-		visited = [False] * len(self.entities)
-		def dfs(current_entity, prev_entity=None):
-			nonlocal turns_count
-			visited[current_entity] = True
-
-			# TODO: Add logic here to check for a turn between prev_entity and current_entity
-			# If a turn is detected, increment turns_count
-			
-			ce = self.entities[current_entity]
-			if ce.type == CustomEntityType.POLY:
-				turns_count += ce.get_turns_count()
-			elif current_entity != 0:
+		for line in self.adj_matrix:
+			if (sum(line) > 2):
 				turns_count += 1
+			ce = self.entities[self.adj_matrix.index(line)]
+			turns_count += ce.get_turns_count()
+			for val in line:
+				if val == 1 and line.index(val) != self.adj_matrix.index(line):
+					oe = self.entities[line.index(val)]
+					print(f"Turn at: {ce.find_common_point(oe)}")
+			# print(line)
+		# visited = [False] * len(self.entities)
+		# def dfs(current_entity, prev_entity=None):
+		# 	nonlocal turns_count
+		# 	visited[current_entity] = True
 
-			for next_entity, is_connected in enumerate(self.adj_matrix[current_entity]):
-				if is_connected and not visited[next_entity]:
-					dfs(next_entity, current_entity)
+		# 	# TODO: Add logic here to check for a turn between prev_entity and current_entity
+		# 	# If a turn is detected, increment turns_count
+			
+		# 	ce = self.entities[current_entity]
+		# 	turns_count += ce.get_turns_count()
+		# 	if prev_entity is not None:
+		# 		turns_count += 1
 
-		# Start DFS from each unvisited entity
-		for entity in range(len(self.entities)):
-			if not visited[entity]:
-				dfs(entity)
+		# 	for next_entity, is_connected in enumerate(self.adj_matrix[current_entity]):
+		# 		if is_connected and not visited[next_entity]:
+		# 			dfs(next_entity, current_entity)
+
+		# # Start DFS from each unvisited entity
+		# for entity in range(len(self.entities)):
+		# 	if not visited[entity]:
+		# 		dfs(entity)
 		return turns_count
 
 	def __get_element_groups_count(self) -> int:
