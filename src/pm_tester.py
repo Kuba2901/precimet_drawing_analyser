@@ -47,22 +47,22 @@ class PMTester(unittest.TestCase):
 				print("ERROR: ", e)
 			print("\n")
 
-	# def test_get_turns_count(self):
-	# 	"""
-	# 	Ensure that the number of turns in the drawing is correct
-	# 	"""
-	# 	print("TURNS COUNT TEST")
-	# 	for idx, test_file in enumerate(self.test_files):
-	# 		analyser = PMAnalyser(test_file)
-	# 		expected_turns_count = self.turns_count[idx]
-	# 		turns = analyser.get_turns_count()
-	# 		try:
-	# 			self.assertEqual(turns, expected_turns_count, f"Mismatch in {test_file}, got: {turns}, expected: {expected_turns_count}")
-	# 			print(f"SUCCESS IN FILE: {test_file}")
-	# 		except AssertionError as e:
-	# 			print(f"FAILURE IN FILE: {test_file}")
-	# 			print("ERROR: ", e)
-	# 		print("\n")
+	def test_get_turns_count(self):
+		"""
+		Ensure that the number of turns in the drawing is correct
+		"""
+		print("TURNS COUNT TEST")
+		for idx, test_file in enumerate(self.test_files):
+			analyser = PMAnalyser(test_file)
+			expected_turns_count = self.turns_count[idx]
+			turns = analyser.turns_count
+			try:
+				self.assertEqual(turns, expected_turns_count, f"Mismatch in {test_file}, got: {turns}, expected: {expected_turns_count}")
+				print(f"SUCCESS IN FILE: {test_file}")
+			except AssertionError as e:
+				print(f"FAILURE IN FILE: {test_file}")
+				print("ERROR: ", e)
+			print("\n")
 
 if __name__ == '__main__':
 	unittest.main()

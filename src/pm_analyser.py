@@ -18,6 +18,7 @@ class PMAnalyser:
 			self.adj_matrix = self.utils.create_entity_adjacency_matrix()
 			self.total_cutting_length = self.utils.get_total_cutting_length()
 			self.cut_ins_count = self.utils.get_cut_ins_count()
+			self.turns_count = self.utils.get_turns_count()
 		except Exception as e:
 			print(f"Error: {e}")
 			sys.exit(1)
@@ -27,5 +28,6 @@ class PMAnalyser:
 Analyser for {self.file_name}
 Total cutting length: {self.total_cutting_length}
 Cut-ins count: {self.cut_ins_count}
+Turns count: {self.turns_count}
 Entities count: {len(self.entities)}
 		"""

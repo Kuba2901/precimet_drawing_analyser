@@ -126,3 +126,42 @@ Length: {entity.get_length()}
 				components_count += 1
 				dfs(entity)
 		return components_count
+
+	def get_turns_count(self) -> int:
+		"""
+		Count the number of turns in the drawing.
+		A turn is a change in direction based on CustomEntity's start_point and end_point.
+		"""
+		adj = self.pm_analyser.adj_matrix
+		entities = self.pm_analyser.entities
+		visited = [False] * len(entities)
+		total_turns = [0]  # Using a list to pass by reference
+		
+		def dfs(entity_idx, entities, adj, visited, start, prev_dir, total_turns):
+			visited[entity_idx] = True
+			for i in range(len(entities)):
+				if adj[entity_idx][i] == 1 and not visited[i]:
+					# Compute direction from current entity's end_point to the next entity's start_point
+					current_entity = entities[entity_idx]
+					next_entity = entities[i]
+					current_dir = (next_entity.start_point.x - current_entity.end_point.x, 
+								next_entity.start_point.y - current_entity.end_point.y)
+					
+					# Check if there's a turn (i.e., direction change)
+					if prev_dir is not None:
+						total_turns[0] += 1
+					
+					dfs(i, entities, adj, visited, start, current_dir, total_turns)
+			
+			# If we return to the start, consider it a turn
+			if entity_idx != start and adj[entity_idx][start] == 1:
+				total_turns[0] += 1
+		
+		# Start DFS from the first unvisited entity
+		for i in range(len(entities)):
+			if not visited[i]:
+				dfs(i, entities, adj, visited, i, None, total_turns)
+		
+		return total_turns[0]
+
+
