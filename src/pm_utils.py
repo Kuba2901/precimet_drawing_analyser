@@ -165,21 +165,7 @@ Length: {entity.get_length()}
 
 	def remove_duplicates(self) -> None:
 		connected_groups = self.pm_analyser.connected_groups
-		unique_groups = []
-		entities = self.pm_analyser.entities
-		elements_to_remove = []
-		for idx, group in enumerate(connected_groups):
-			for i in range(len(group)):
-				elem = entities[group[i]]
-				unique_groups.append([elem])
-				for j in range(i + 1, len(group)):
-					other_elem = entities[group[j]]
-					if elem == other_elem:
-						elements_to_remove.append(other_elem)
-					else:
-						unique_groups[i].append(other_elem)
-		self.pm_analyser.entities = [entity for entity in entities if entity not in elements_to_remove]
-		self.pm_analyser.connected_groups = unique_groups
+		
 
 	def get_turns_count(self) -> int:
 		"""
