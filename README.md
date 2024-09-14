@@ -17,8 +17,8 @@ The **Mechanical Drawing Analyzer** is a Python-based tool designed to facilitat
 1. **Clone the Repository:**
 
    ```bash
-   git clone git@gitlab.precimet.internal:przewodnik-dev/precimet-wyceny.git
-   cd precimet-wyceny
+   git clone git@github.com:Kuba2901/precimet_drawing_analyser.git
+   cd precimet_drawing_analyser
    ```
 
 2. **Install the Required Dependencies:**
@@ -40,7 +40,7 @@ The **Mechanical Drawing Analyzer** is a Python-based tool designed to facilitat
    Use the following command to analyze a drawing file:
 
    ```bash
-   python main.py <path_to_drawing_file>
+   python3 main.py
    ```
 
    Replace `<path_to_drawing_file>` with the actual path to the drawing file you want to analyze.
